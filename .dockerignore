@@ -1,0 +1,52 @@
+### Version Control
+.git
+.gitignore
+.gitattributes
+
+### Python / FastAPI
+**/__pycache__/
+**/*$py.class
+**/.pytest_cache/
+**/.venv/
+**/venv/
+**/.env
+**/.env.*
+**/*.egg-info/
+**/.mypy_cache/
+**/.ruff_cache/
+
+### Node / React / TypeScript
+**/node_modules/
+**/dist/
+**/.next/
+**/.turbo/
+**/.cache/
+**/.npm
+**/.yarn/cache/
+**/.yarn/unplugged/
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+
+### TanStack Router Specific
+**/routeTree.gen.ts
+
+### OS / IDE / Logs
+**/.DS_Store
+**/Thumbs.db
+**/.vscode/
+**/.idea/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.history/
+
+### Docker Specific
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*.yml
+
+### Documentation
+**/docs/
+**/*.md

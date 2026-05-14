@@ -1,0 +1,18 @@
+### OS / IDE files
+.idea/
+.vscode/
+.DS_STORE
+
+### Temp/dev files
+__pycache__/
+.crush/
+.ruff_cache/
+.tanstack/
+.venv/
+logs/
+node_modules/
+.env
+docker-compose.yml
+
+### Build files
+dist/
