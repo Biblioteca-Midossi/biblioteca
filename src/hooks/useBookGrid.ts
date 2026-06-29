@@ -1,32 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import useBookStore from "@local/hooks/useBookStore"
 import { getBreakpoints } from "@local/components/Utils/getBreakpoints"
-import type { Book } from '@local/types/Book'
-import type { ChangeEvent } from 'react'
+import type { Book } from '@local/types/book'
 
 export const useBookGrid = () => {
   const { books, singleBook, maxpage, fetchBooks, fetchSingleBook, editBook, deleteBook } = useBookStore()
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const [selectedBook, setSelectedBook] = useState<Partial<Book> | null>(null)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [deleteResponseDialog, setDeleteResponseDialog] = useState({
-    open: false,
-    message: '',
-    success: false
-  })
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editFormData, setEditFormData] = useState<Partial<Book>>({
-    titolo: '',
-    nomeAutore: [],
-    cognomeAutore: [],
-    isbn: '',
-    genere: [],
-    quantita: '',
-    casaEditrice: '',
-    descrizione: '',
-    copertina: null
-  })
 
   const currentBreakpoint = getBreakpoints()
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -40,7 +21,7 @@ export const useBookGrid = () => {
     : 2
 
   const filteredBooks = useMemo(() => {
-    if (!Array.isArray(books)) return []
+    if (!(books instanceof Array)) return []
     return books.sort((a, b) => a.id - b.id)
   }, [books])
 
@@ -49,7 +30,7 @@ export const useBookGrid = () => {
     setPage(1)
   }
 
-  const handlePageChange = (_event: ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (value: number) => {
     setPage(value)
   }
 
@@ -66,17 +47,9 @@ export const useBookGrid = () => {
     limit,
     anchorEl,
     selectedBook,
-    isDeleteDialogOpen,
-    deleteResponseDialog,
-    isEditDialogOpen,
-    editFormData,
     currentBreakpoint,
     setAnchorEl,
     setSelectedBook,
-    setIsDeleteDialogOpen,
-    setDeleteResponseDialog,
-    setIsEditDialogOpen,
-    setEditFormData,
     handleSearch,
     handlePageChange,
     fetchBooks,

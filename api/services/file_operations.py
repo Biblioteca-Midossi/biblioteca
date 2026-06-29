@@ -3,8 +3,8 @@ import os
 from PIL import Image
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from utils.database.db_helper import PSQLDatabase
-from utils.Logger import log
+from api.lib.database import PSQLDatabase
+from api.lib.logger import log
 
 
 async def convert_to_png(file_content: bytes):
@@ -65,7 +65,7 @@ async def upload_profile_picture(file, user_id):
         with PSQLDatabase() as db:
             cursor = db.get_cursor()
             cursor.execute(
-                "update utenti set profile_picture = %s where id_utente = %s",
+                "update utenti set profile_picture = %s where id = %s",
                 (file_path[2:], user_id),
             )
             db.commit()

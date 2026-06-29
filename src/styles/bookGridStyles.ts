@@ -1,56 +1,24 @@
-import type { SxProps } from '@mui/material'
-import type { CSSProperties } from 'react'
-
-export const BookGridStyles: {
-  [key: string]: CSSProperties | SxProps
-} = {
-  altText: {
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'center',
-    textAlign: 'center'
-  },
-  containerGrid: {
-    marginTop: '1rem',
-    marginBottom: '1rem',
-    width: '100%',
-    maxWidth: '100%',
-    justifyItems: 'center',
-    paddingTop: '1rem',
-    '& .MuiGrid-item': {
-      padding: 0.5
-    },
-    '& .MuiGrid-root:last-of-type': {
-      margin: '0rem'
-    }
-  },
-  bookCard: {
-    height: '100%',
-    width: '100%',
-    padding: '.5rem',
-    '& .MuiCardContent-root:last-child': {
-      padding: 0,
-      margin: '0rem'
-    }
-  },
-  bookTitle: {
-    whiteSpace: 'hidden',
-    textOverflow: 'ellipsis'
-  },
-  bookAuthor: {
-    whiteSpace: 'hidden',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis'
+/** Horizontal padding based on current breakpoint */
+export function getResponsivePadding(breakpoint: string): string {
+  switch (breakpoint) {
+    case 'xl': return '4rem'
+    case 'lg': return '2.75rem'
+    case 'md': return '1.75rem'
+    case 'sm': return '1.25rem'
+    default:   return '.75rem'
   }
 }
 
-export const getResponsivePadding = (currentBreakpoint: string) => {
-  return (
-    (currentBreakpoint === "xl") ? '4rem'
-    : (currentBreakpoint === 'lg') ? '2.75rem'
-    : (currentBreakpoint === 'md') ? '1.75rem'
-    : (currentBreakpoint === 'sm') ? '1.25rem'
-    : (currentBreakpoint === 'xs') ? '.75rem'
-    : '.5rem'
-  )
+/**
+ * Number of columns (and page limit) based on current breakpoint.
+ * Mirrors the SimpleGrid responsive cols object so both values stay in sync.
+ */
+export function getResponsiveCols(breakpoint: string): number {
+  switch (breakpoint) {
+    case 'xl': return 16
+    case 'lg': return 6
+    case 'md': return 4
+    case 'sm': return 4
+    default:   return 2
+  }
 }

@@ -1,80 +1,74 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Button, Container, Paper, TextField, Typography } from '@mui/material'
-import {  useEffect, useState } from 'react'
-import { useAuth } from '@local/contexts/AuthContext'
-import type { SubmitEvent } from 'react'
+import { createFileRoute, useNavigate  } from '@tanstack/react-router'
+import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
+import { useEffect } from 'react'
+import { useAuthStore } from '@local/hooks/useAuthStore'
 
 export const Route = createFileRoute('/login')({
   component: Login,
 })
 
 function Login() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const form = useForm({
+    initialValues: {
+      username: '',
+      password: '',
+    },
+  })
 
   const navigate = useNavigate()
 
-  const { login, user } = useAuth()
+  const { login, user } = useAuthStore()
 
   useEffect(() => {
     if (user) {
-      alert('You are already logged in.\nRedirecting you to the home.')
+      notifications.show({
+        title: 'Già autenticato',
+        message: 'Sei già loggato. Reindirizzamento alla home.',
+        color: 'blue',
+      })
       navigate({ to: '/' })
     }
   }, [])
-  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
-    e.preventDefault()
+
+  async function handleSubmit(values: { username: string; password: string }) {
     try {
-      await login(username, password)
+      await login(values.username, values.password)
       navigate({ to: '/' })
     } catch (error) {
-      alert('Invalid credentials! Please try again.')
+      notifications.show({
+        title: 'Errore di accesso',
+        message: 'Credenziali non valide. Riprova.',
+        color: 'red',
+      })
     }
-
   }
+
   return (
-    <>
-      <Container component="main" maxWidth="xs" sx={{ marginTop: '5.5rem' }}>
-        <Paper sx={{ padding: '1rem' }} elevation={5}>
-          <Typography component="h1" variant="h5">
-            Login
-          </Typography>
-          <form onSubmit={handleSubmit}>
-            <TextField
-              variant="outlined"
-              margin="normal"
+    <Container size="xs" mt="5.5rem">
+      <Paper shadow="sm" p="md">
+        <Title order={2}>Login</Title>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="sm" mt="sm">
+            <TextInput
               required
-              fullWidth
               label="Username"
-              name="username"
               autoFocus
-              value={username}
-              onChange={function (e) {
-                setUsername(e.target.value)
-              }}
+              {...form.getInputProps('username')}
             />
-            <TextField
-              variant="outlined"
-              margin="normal"
+            <TextInput
               required
-              fullWidth
-              name="password"
               label="Password"
               type="password"
-              value={password}
-              onChange={function (e) {
-                setPassword(e.target.value)
-              }}
+              {...form.getInputProps('password')}
             />
-            <Button type="submit" fullWidth variant="contained" color="primary">
+            <Button type="submit" fullWidth>
               Login
             </Button>
-          </form>
-        </Paper>
-      </Container>
-    </>
+          </Stack>
+        </form>
+      </Paper>
+    </Container>
   )
-
 }
-
-

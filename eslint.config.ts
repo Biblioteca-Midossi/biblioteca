@@ -1,5 +1,3 @@
-// @ts-check
-
 import { tanstackConfig } from '@tanstack/eslint-config'
 import stylistic from '@stylistic/eslint-plugin'
 

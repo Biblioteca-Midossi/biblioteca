@@ -1,4 +1,4 @@
-import { Menu, MenuItem } from '@mui/material'
+import { Menu } from '@mantine/core'
 
 interface BookOptionsMenuProps {
   anchorEl: HTMLElement | null
@@ -8,16 +8,21 @@ interface BookOptionsMenuProps {
   onGoToPage: () => void
 }
 
-export function BookOptionsMenu({ anchorEl, onClose, onEdit, onDelete, onGoToPage }: BookOptionsMenuProps ){
+export function BookOptionsMenu({ anchorEl, onClose, onEdit, onDelete, onGoToPage }: BookOptionsMenuProps) {
   return (
     <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={onClose}
+      opened={Boolean(anchorEl)}
+      onChange={(opened) => { if (!opened) onClose() }}
+      middlewares={{ flip: true, shift: true }}
     >
-      <MenuItem onClick={onEdit}>Modifica libro</MenuItem>
-      <MenuItem onClick={onDelete}>Elimina libro</MenuItem>
-      <MenuItem onClick={onGoToPage}>Vai alla pagina</MenuItem>
+      <Menu.Target>
+        <div className="absolute invisible pointer-events-none" />
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Item onClick={onEdit}>Modifica libro</Menu.Item>
+        <Menu.Item onClick={onDelete}>Elimina libro</Menu.Item>
+        <Menu.Item onClick={onGoToPage}>Vai alla pagina</Menu.Item>
+      </Menu.Dropdown>
     </Menu>
   )
 }

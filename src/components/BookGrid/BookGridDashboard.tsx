@@ -1,200 +1,123 @@
-import React from 'react'
-import { Box, Grid, Pagination, Typography } from '@mui/material'
 import { useNavigate } from '@tanstack/react-router'
+import { Text } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import { useBookGrid } from '@local/hooks/useBookGrid'
-import { BookGridStyles, getResponsivePadding } from '@local/styles/bookGridStyles'
-import { BookOptionsMenu } from '@local/components/BookGrid/BookOptionsMenu'
-import { SearchBar } from '@local/components/SearchBar'
-import { BookEditDialog } from '@local/components/BookGrid/BookEditDialog'
-import { BookDeleteDialog } from '@local/components/BookGrid/BookDeleteDialog'
 import { BookCard } from '@local/components/BookGrid/BookCard'
+import { BookGrid } from '@local/components/BookGrid/BookGrid'
+import { BookOptionsMenu } from '@local/components/BookGrid/BookOptionsMenu'
+import { openBookEditModal } from '@local/components/BookGrid/BookEditDialog'
+import type { EditBookFormValues } from '@local/components/BookGrid/BookEditDialog'
+import type { MouseEvent } from 'react'
 
 export function BookGridDashboard() {
   const navigate = useNavigate()
   const {
     books,
-    filteredBooks, 
-    maxpage, 
+    filteredBooks,
+    maxpage,
     page,
     limit,
-    currentBreakpoint,
     anchorEl,
     selectedBook,
-    isDeleteDialogOpen,
-    deleteResponseDialog,
-    isEditDialogOpen,
-    editFormData,
     setAnchorEl,
     setSelectedBook,
-    setIsDeleteDialogOpen,
-    setDeleteResponseDialog,
-    setIsEditDialogOpen,
-    setEditFormData,
     handleSearch,
     handlePageChange,
     fetchBooks,
     editBook,
-    deleteBook
+    deleteBook,
   } = useBookGrid()
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, book: any) => {
+  function handleMenuOpen(event: MouseEvent<HTMLButtonElement>, book: any) {
     event.preventDefault()
     setSelectedBook(book)
     setAnchorEl(event.currentTarget)
   }
 
-  const handleMenuClose = () => {
+  function handleMenuClose() {
     setAnchorEl(null)
   }
 
-  const handleGoToPage = () => {
+  function handleGoToPage() {
     if (selectedBook?.id) {
       navigate({ to: `/books/${selectedBook.id}` })
     }
   }
 
-  function parseAuthors(authorsString: string | Array<string> | undefined) {
-    if (Array.isArray(authorsString)) {
-      // If it's already an array, process each author
-      return authorsString.map(authorStr => {
-        const [nome, ...cognomeparts] = authorStr.split(' ')
-        return {
-          nome: nome,
-          cognome: cognomeparts.join(' ')
-        }
-      })
-    }
-
-    // If it's a string of authors
-    return authorsString?.split(', ').map(authorStr => {
-      const [nome, ...cognomeparts] = authorStr.split(' ')
-      return {
-        nome: nome,
-        cognome: cognomeparts.join(' ')
+  async function handleEditSubmit(values: EditBookFormValues) {
+    try {
+      const bookData = {
+        id: selectedBook?.id,
+        titolo: values.titolo,
+        nomeAutore: values.nomeAutore ? values.nomeAutore.split(',').map(s => s.trim()) : [],
+        cognomeAutore: values.cognomeAutore ? values.cognomeAutore.split(',').map(s => s.trim()) : [],
+        isbn: values.isbn,
+        genere: values.genere ? values.genere.split(',').map(s => s.trim()) : [],
+        quantita: values.quantita,
+        casaEditrice: values.casaEditrice,
+        istituto: values.istituto,
+        scaffale: values.scaffale,
+        descrizione: values.descrizione,
+        copertina: values.copertina,
       }
-    })
+      const success = await editBook(bookData)
+      if (success) {
+        await fetchBooks(page, limit, '')
+        modals.closeAll()
+      }
+    } catch (error) {
+      /* handled by the store notification */
+    }
   }
 
   return (
     <>
-      <Grid
-        container 
-        sx={{
-          ...BookGridStyles.containerGrid,
-          paddingX: getResponsivePadding(currentBreakpoint),
-        }}
-      >
-        {Array.isArray(books) ? (
-          filteredBooks.map((book) => (
-            <Grid
-              key={book.id}
-              size={{ xs: 6, sm: 3, md: 3, lg: 2, xl: 1.5 }}
-            >
-              <BookCard 
-                book={book}
-                showId
-                onMenuOpen={handleMenuOpen} 
-              />
-            </Grid>
-          ))
-        ) : (
-          <Typography variant="h5" sx={BookGridStyles.altText}>
-            {books}
-          </Typography>
+      <BookGrid
+        books={books instanceof Array ? filteredBooks : books}
+        maxpage={maxpage}
+        page={page}
+        onPageChange={handlePageChange}
+        onSearch={handleSearch}
+        renderBookCard={(book) => (
+          <BookCard
+            key={book.id}
+            book={book}
+            showId
+            onMenuOpen={handleMenuOpen}
+          />
         )}
-      </Grid>
+      />
 
-      <BookOptionsMenu 
+      <BookOptionsMenu
         anchorEl={anchorEl}
         onClose={handleMenuClose}
         onEdit={() => {
           handleMenuClose()
-
-          console.debug('onEdit', selectedBook)
-
-          setEditFormData({
-            ...selectedBook,
-            nomeAutore: parseAuthors(selectedBook?.autori)!.map(author => author.nome),
-            cognomeAutore: parseAuthors(selectedBook?.autori)!.map(author => author.cognome),
-            autori: undefined,
-          })
-
-          setIsEditDialogOpen(true)
+          openBookEditModal(selectedBook, handleEditSubmit)
         }}
-        onDelete={() => setIsDeleteDialogOpen(true)}
+        onDelete={() => {
+          modals.openConfirmModal({
+            title: 'Conferma eliminazione',
+            centered: true,
+            children: (
+              <Text size="sm">
+                Sei sicuro di voler eliminare il libro &quot;{selectedBook?.titolo}&quot;?
+                Questa azione non può essere annullata.
+              </Text>
+            ),
+            labels: { confirm: 'Elimina', cancel: 'Annulla' },
+            confirmProps: { color: 'red' },
+            onConfirm: async () => {
+              handleMenuClose()
+              if (selectedBook?.id) {
+                await deleteBook(selectedBook.id)
+                void fetchBooks(page, limit, '')
+              }
+            },
+          })
+        }}
         onGoToPage={handleGoToPage}
       />
-
-      <BookEditDialog 
-        open={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        editFormData={editFormData}
-        setEditFormData={setEditFormData}
-        onSubmit={async () => {
-          try {
-            const response = await editBook(editFormData)
-            if (response === 'successful-request') {
-              await fetchBooks(page, limit, '')
-              setIsEditDialogOpen(false)
-            }
-          } catch (error) {
-            console.error('Error editing book', error)
-          }
-        }}
-      />
-
-      <BookDeleteDialog 
-        open={isDeleteDialogOpen}
-        book={selectedBook}
-        deleteResponseDialog={deleteResponseDialog}
-        onCancel={() => setIsDeleteDialogOpen(false)}
-        onConfirm={() => {
-          handleMenuClose()
-
-          if (selectedBook?.id) {
-            deleteBook(selectedBook.id).then((response) => {
-              setDeleteResponseDialog({
-                open: true,
-                message: response === 'successful-request' 
-                  ? 'Libro eliminato con successo' 
-                  : "Errore durante l'eliminazione del libro.",
-                success: response === 'successful-request',
-              })
-            })
-          }
-          setIsDeleteDialogOpen(false)
-        }}
-        onResponseDialogClose={() => {
-          setDeleteResponseDialog({
-            ...deleteResponseDialog,
-            open: false
-          })
-          void fetchBooks(page, limit, '')
-        }}
-      />
-
-      <Box
-        sx={{
-          flexDirection: 'column',
-          display: "flex",
-          justifyContent: "center",
-          marginTop: '.5rem',
-          width: "100%",
-          marginBottom: '3rem'
-        }}
-      >
-        <Pagination
-          sx={{
-            alignSelf: 'center',
-            marginBottom: '.25rem'
-          }}
-          count={maxpage}
-          page={page}
-          onChange={handlePageChange}
-          color="primary"
-        />
-        <SearchBar onSearch={handleSearch} />
-      </Box>
     </>
   )
 }

@@ -1,27 +1,14 @@
-import { Box, CircularProgress, Typography } from '@mui/material'
+import { Box, Loader, Text } from '@mantine/core'
 
 export function LoadingScreen() {
   return (
-    <>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh'
-        }}
-      >
-        <CircularProgress />
-        <Typography
-          variant="h6"
-          sx={{
-            marginTop: '1rem'
-          }}
-        >
-          Loading...
-        </Typography>
-      </Box>
-    </>
+    <Box
+      className="flex flex-col items-center justify-center h-full"
+    >
+      <Loader size="lg" />
+      <Text size="lg" mt="md">
+        Loading...
+      </Text>
+    </Box>
   )
 }

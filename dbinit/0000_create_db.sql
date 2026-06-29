@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS libri (
 );
 
 CREATE TABLE IF NOT EXISTS utenti (
-    id_utente SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     cognome VARCHAR(64) NOT NULL,
     nome VARCHAR(64) NOT NULL,
     id_istituto INTEGER REFERENCES istituti,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS utenti (
 
 CREATE TABLE IF NOT EXISTS prenotazioni (
     id_prenotazione SERIAL PRIMARY KEY,
-    id_utente BIGINT NOT NULL REFERENCES utenti,
+    id BIGINT NOT NULL REFERENCES utenti,
     id_libro BIGINT NOT NULL REFERENCES libri,
     inizio_prenotazione DATE NOT NULL,
     fine_prenotazione DATE NOT NULL

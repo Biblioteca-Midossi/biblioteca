@@ -1,110 +1,42 @@
-import { extendTheme } from '@mui/material/styles'
+import { createTheme, virtualColor } from '@mantine/core'
+import type { MantineColorsTuple } from '@mantine/core'
 
-const sharedPalette = {
-  // Blue Tones
-  lightblue: {
-    main: '#ADD8E6',
-  },
-  midossiblue: {
-    main: '#0066cc',
-    dark: '#D84B20',
-  },
-  trafficblue: {
-    main: '#063971',
-  },
+const sharedColors: Record<string, MantineColorsTuple> = {
+  lightblue: ['#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6','#ADD8E6'],
+  trafficblue: ['#063971','#063971','#063971','#063971','#063971','#063971','#063971','#063971','#063971','#063971'],
+  coffee: ['#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37','#6F4E37'],
+  nutbrown: ['#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29','#5B3A29'],
+  green: ['#00FF00','#00FF00','#00FF00','#00FF00','#00FF00','#00FF00','#00FF00','#00FF00','#00FF00','#00FF00'],
+  anthracite: ['#293133','#293133','#293133','#293133','#293133','#293133','#293133','#293133','#293133','#293133'],
+  cream: ['#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3','#FDF4E3'],
+  graphiteblack: ['#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C','#1C1C1C'],
+  papyruswhite: ['#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD','#CFD3CD'],
+  smokyblack: ['#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08','#0f0a08'],
+  stonegrey: ['#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A','#8B8C7A'],
+  red: ['#FF0000','#FF0000','#FF0000','#FF0000','#FF0000','#FF0000','#FF0000','#FF0000','#FF0000','#FF0000'],
+  rose: ['#E63244','#E63244','#E63244','#E63244','#E63244','#E63244','#E63244','#E63244','#E63244','#E63244'],
+  salmon: ['#FA8072','#FA8072','#FA8072','#FA8072','#FA8072','#FA8072','#FA8072','#FA8072','#FA8072','#FA8072'],
+  signalorange: ['#D84B20','#D84B20','#D84B20','#D84B20','#D84B20','#D84B20','#D84B20','#D84B20','#D84B20','#D84B20'],
+  tomatored: ['#A12312','#A12312','#A12312','#A12312','#A12312','#A12312','#A12312','#A12312','#A12312','#A12312'],
+  trafficorange: ['#F54021','#F54021','#F54021','#F54021','#F54021','#F54021','#F54021','#F54021','#F54021','#F54021'],
+  vermilion: ['#CB2821','#CB2821','#CB2821','#CB2821','#CB2821','#CB2821','#CB2821','#CB2821','#CB2821','#CB2821'],
+  violet: ['#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93','#5C3A93'],
+  melonyellow: ['#F4A900','#F4A900','#F4A900','#F4A900','#F4A900','#F4A900','#F4A900','#F4A900','#F4A900','#F4A900'],
+  trafficyellow: ['#FAD201','#FAD201','#FAD201','#FAD201','#FAD201','#FAD201','#FAD201','#FAD201','#FAD201','#FAD201'],
+}
 
-  // Brown Tones
-  coffee: {
-    main: '#6F4E37',
+const theme = createTheme({
+  primaryColor: 'midossi',
+  colors: {
+    midossi: virtualColor({
+      name: 'midossi',
+      light: 'blue',
+      dark: 'orange',
+    }),
+    ...sharedColors,
   },
-  nutbrown: {
-    main: '#5B3A29',
-  },
-
-  // Green Tones
-  green: {
-    main: '#00FF00',
-  },
-
-  // Neutral Tones (Black and whites)
-  anthracite: {
-    main: '#293133',
-  },
-  cream: {
-    main: '#FDF4E3',
-  },
-  graphiteblack: {
-    main: '#1C1C1C',
-  },
-  papyruswhite: {
-    main: '#CFD3CD',
-  },
-  smokyblack: {
-    main: '#0f0a08',
-  },
-  stonegrey: {
-    main: '#8B8C7A',
-  },
-
-  // Red Tones
-  red: {
-    main: '#FF0000',
-  },
-  rose: {
-    main: '#E63244',
-  },
-  salmon: {
-    main: '#FA8072',
-  },
-  signalorange: {
-    main: '#D84B20',
-  },
-  tomatored: {
-    main: '#A12312',
-  },
-  trafficorange: {
-    main: '#F54021',
-  },
-  vermilion: {
-    main: '#CB2821',
-  },
-
-  // Violet Tones
-  violet: {
-    main: '#5C3A93',
-  },
-
-  // Yellow Tones
-  melonyellow: {
-    main: '#F4A900',
-  },
-  trafficyellow: {
-    main: '#FAD201',
-  },
-} as const
-
-const theme = extendTheme({
-  colorSchemeSelector: 'data-mui-color-scheme',
-  colorSchemes: {
-    light: {
-      palette: {
-        mode: 'light',
-        background: {
-          default: '#F4F3F2',
-        },
-        ...sharedPalette,
-      },
-    },
-    dark: {
-      palette: {
-        mode: 'dark',
-        background: {
-          default: '#121212',
-        },
-        ...sharedPalette,
-      },
-    },
-  },
+  fontFamily: 'Varela Round, sans-serif',
+  defaultRadius: 'md',
 })
 
 export default theme

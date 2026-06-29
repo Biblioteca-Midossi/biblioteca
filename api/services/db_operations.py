@@ -2,9 +2,10 @@ import psycopg
 from fastapi import HTTPException, UploadFile
 from starlette.responses import JSONResponse
 from api.exceptions import InvalidRequestError
+from api.models.requests import AutoreData, CollocazioneData, CreateBookPayload, LibroData
 from api.services.file_operations import upload_thumbnail
-from utils.database.db_helper import PSQLDatabase
-from utils.Logger import log
+from api.lib.database import PSQLDatabase
+from api.lib.logger import log
 
 
 def check_isbn_exists(isbn: str) -> bool:
@@ -14,20 +15,17 @@ def check_isbn_exists(isbn: str) -> bool:
         return cursor.fetchone()[0] > 0
 
 
-def insert_collocazione(collocazione: dict[str, str]) -> int:
-    scaffale: str = collocazione.get("scaffale").upper()
-    istituto: str = collocazione.get("istituto").upper()
-
-    id_istituto_map: dict = {"ITT": 1, "LAC": 2, "LAV": 3}
-    id_istituto: int = id_istituto_map.get(istituto)
+def insert_collocazione(collocazione: CollocazioneData) -> int:
+    scaffale = collocazione.scaffale.upper()
+    istituto = collocazione.istituto.upper()
 
     with PSQLDatabase() as db:
         cursor = db.get_cursor()
 
         cursor.execute(
             "select id_collocazione from collocazioni "
-            "where scaffale = %s and id_istituto = %s",
-            (scaffale, id_istituto),
+            "where scaffale = %s and istituto = %s",
+            (scaffale, istituto),
         )
 
         id_collocazione = cursor.fetchone()
@@ -36,17 +34,17 @@ def insert_collocazione(collocazione: dict[str, str]) -> int:
         else:
             cursor.execute(
                 "insert into collocazioni"
-                "(id_istituto, scaffale) values (%s, %s) "
+                "(istituto, scaffale) values (%s, %s) "
                 "returning id_collocazione",
-                (id_istituto, scaffale),
+                (istituto, scaffale),
             )
             db.commit()
             return cursor.fetchone()[0]
 
 
-def insert_autore(autore: dict[str, str]) -> int:
-    nome: str = autore.get("nome")
-    cognome: str = autore.get("cognome")
+def insert_autore(autore: AutoreData) -> int:
+    nome = autore.nome
+    cognome = autore.cognome
 
     with PSQLDatabase() as db:
         cursor = db.get_cursor()
@@ -66,16 +64,10 @@ def insert_autore(autore: dict[str, str]) -> int:
                 (nome, cognome),
             )
             db.commit()
-            return cursor.fetchone()[0]  # id_autore
+            return cursor.fetchone()[0]
 
 
-def insert_libro(libro: dict, id_collocazione: int):
-    isbn: str = libro.get("isbn")
-    titolo: str = libro.get("titolo")
-    quantita: str = libro.get("quantita")
-    casa_editrice: str = libro.get("casaEditrice")
-    descrizione: str = libro.get("descrizione")
-
+def insert_libro(libro: LibroData, id_collocazione: int):
     with PSQLDatabase() as db:
         cursor = db.get_cursor()
 
@@ -85,36 +77,16 @@ def insert_libro(libro: dict, id_collocazione: int):
             "quantita, casa_editrice, descrizione) "
             "values (%s, %s, %s, %s, %s, %s) "
             "returning id_libro",
-            (id_collocazione, isbn, titolo, quantita, casa_editrice, descrizione),
+            (
+                id_collocazione,
+                libro.isbn,
+                libro.titolo,
+                str(libro.quantita),
+                libro.casa_editrice,
+                libro.descrizione,
+            ),
         )
         id_libro = cursor.fetchone()[0]
-
-        # Handle genre insertion
-        genres = libro.get("genres", [])
-        if not isinstance(genres, list):
-            genres = [genres]
-
-        for genre in genres:
-            cursor.execute(
-                "select id_genere from generi where nome_genere = %s", (genre,)
-            )
-            existing_genre = cursor.fetchone()
-
-            if not existing_genre:
-                # Insert new genre
-                cursor.execute(
-                    "insert into generi (nome_genere) values (%s) returning id_genere",
-                    (genre,),
-                )
-                id_genere = cursor.fetchone()[0]
-            else:
-                id_genere = existing_genre[0]
-
-            # Associate genre with book
-            cursor.execute(
-                "insert into libro_generi (id_libro, id_genere) values (%s, %s)",
-                (id_libro, id_genere),
-            )
 
         db.commit()
         return id_libro
@@ -130,27 +102,25 @@ def insert_libro_autori(id_libro: int, id_autore: int):
         db.commit()
 
 
-async def insert_book_into_database(data, thumbnail: UploadFile):
-    collocazione = {
-        "istituto": data["istituto"],
-        "scaffale": data["scaffale"],
-    }
+async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFile | None):
+    collocazione = CollocazioneData(
+        istituto=data.istituto,
+        scaffale=data.scaffale,
+    )
 
-    libro = {
-        "isbn": data["isbn"],
-        "titolo": data["titolo"],
-        "genere": data["genere"],
-        "quantita": data["quantita"],
-        "casaEditrice": data["casaEditrice"],
-        "descrizione": data["descrizione"],
-    }
+    libro = LibroData(
+        isbn=data.isbn,
+        titolo=data.titolo,
+        quantita=data.quantita,
+        casa_editrice=data.casa_editrice,
+        descrizione=data.descrizione,
+    )
 
-    author_names = [
-        name.strip() for names in data["nomeAutore"] for name in names.split(",")
-    ]
+    # Parse authors
+    author_names = [name.strip() for names in data.nome_autore for name in names.split(",")]
     author_surnames = [
         surname.strip()
-        for surnames in data["cognomeAutore"]
+        for surnames in data.cognome_autore
         for surname in surnames.split(",")
     ]
 
@@ -160,17 +130,17 @@ async def insert_book_into_database(data, thumbnail: UploadFile):
         )
 
     authors = [
-        {"nome": nome, "cognome": cognome}
+        AutoreData(nome=nome, cognome=cognome)
         for nome, cognome in zip(author_names, author_surnames)
     ]
 
     try:
-        if check_isbn_exists(libro.get("isbn")):
+        if check_isbn_exists(libro.isbn):
             with PSQLDatabase() as db:
                 cursor = db.get_cursor()
                 cursor.execute(
                     "update libri set quantita = libri.quantita + 1 where isbn = %s",
-                    (libro.get("isbn"),),
+                    (libro.isbn,),
                 )
                 db.commit()
             return JSONResponse(
@@ -188,7 +158,7 @@ async def insert_book_into_database(data, thumbnail: UploadFile):
             insert_libro_autori(id_libro, id_autore)
         if thumbnail:
             await upload_thumbnail(thumbnail, id_libro)
-        log.info(f"Book '{libro['titolo']}' inserted successfully into the database.")
+        log.info(f"Book '{libro.titolo}' inserted successfully into the database.")
         return JSONResponse({"status": "successful"}, 201)
 
     except InvalidRequestError as e:

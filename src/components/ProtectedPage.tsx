@@ -1,7 +1,7 @@
-import { useAuth } from '@local/contexts/AuthContext'
 import { LoadingScreen } from '@local/components/LoadingScreen'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { useAuthStore } from '@local/hooks/useAuthStore'
 import type { ReactElement } from 'react'
 
 interface ProtectedPageProps {
@@ -10,7 +10,7 @@ interface ProtectedPageProps {
 }
 
 export function ProtectedPage({ levelOfProtection, children }: ProtectedPageProps) {
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuthStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -30,9 +30,8 @@ export function ProtectedPage({ levelOfProtection, children }: ProtectedPageProp
   if (loading) return <LoadingScreen />
 
   if (!user || user.ruolo < levelOfProtection) {
-    return <LoadingScreen /> // Will redirect above
+    return <LoadingScreen />
   }
 
   return children
 }
-

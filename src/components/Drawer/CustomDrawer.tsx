@@ -1,70 +1,62 @@
-import { Divider, Drawer, List, ListItem, ListItemButton, ListItemText } from '@mui/material'
-import { useAuth } from '@local/contexts/AuthContext'
-import { useNavigate } from "@tanstack/react-router"
+import { Divider, Drawer, Stack, Text, UnstyledButton } from '@mantine/core'
+import {useLocation, useNavigate} from '@tanstack/react-router'
+import { useAuthStore } from '@local/hooks/useAuthStore'
 
 interface CustomDrawerProps {
-  isOpen: boolean
-  handleDrawerToggle: () => void
+  opened: boolean
+  onClose: () => void
 }
 
-export function CustomDrawer({ isOpen, handleDrawerToggle }: CustomDrawerProps) {
-  const { user } = useAuth()
+export function CustomDrawer({ opened, onClose }: CustomDrawerProps) {
+  const { user } = useAuthStore()
   const navigate = useNavigate()
+  const pathname = useLocation({ select: (location) => location.pathname })
 
   return (
     <Drawer
-      anchor="left"
-      open={isOpen}
-      onClose={handleDrawerToggle}
-      sx={{
-        '& .MuiDrawer-paper': {
-          width: '45%',
-          opacity: '95%'
-        }
-      }}
+      opened={opened}
+      onClose={onClose}
+      position="left"
+      size="45%"
+      overlayProps={{ backgroundOpacity: 0.05 }}
+      withCloseButton={false}
     >
-      <List disablePadding>
-        <ListItem>
-          <ListItemButton
-            onClick={() => {
-              handleDrawerToggle()
-              navigate({ to: '/' })
-            }}
-          >
-            <ListItemText
-              primary={
-                window.location.toString().endsWith('/') || window.location.toString().endsWith('/home')
-                  ? 'Home'
-                  : 'Torna alla Home'
-              }
-            />
-          </ListItemButton>
-        </ListItem>
+      <Stack gap={0}>
+        <UnstyledButton
+          p="sm"
+          onClick={() => {
+            onClose()
+            navigate({ to: '/' })
+          }}
+        >
+          <Text>
+            {pathname.endsWith('/')
+              ? 'Home'
+              : 'Torna alla Home'}
+          </Text>
+        </UnstyledButton>
         <Divider />
         {user && user.ruolo >= 3 && (
-          <ListItem>
-            <ListItemButton
-              onClick={() => {
-                handleDrawerToggle()
-                navigate({ to: '/dashboard' })
-              }}
-            >
-              <ListItemText primary="Inserimento libri" />
-            </ListItemButton>
-          </ListItem>
-        )}
-        <ListItem sx={{ bottom: 0 }}>
-          <ListItemButton
+          <UnstyledButton
+            p="sm"
             onClick={() => {
-              handleDrawerToggle()
-              navigate({ to: '/register' })
+              onClose()
+              navigate({ to: '/dashboard' })
             }}
           >
-            <ListItemText primary="Registrati" />
-          </ListItemButton>
-        </ListItem>
-
-      </List>
+            <Text>Inserimento libri</Text>
+          </UnstyledButton>
+        )}
+        <UnstyledButton
+          p="sm"
+          onClick={() => {
+            onClose()
+            navigate({ to: '/register' })
+          }}
+        >
+          <Text>Registrati</Text>
+        </UnstyledButton>
+      </Stack>
     </Drawer>
   )
 }

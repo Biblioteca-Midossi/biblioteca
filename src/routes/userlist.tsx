@@ -1,211 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  InputLabel,
-  MenuItem, Paper,
+  Group,
+  Loader,
+  Paper,
   Select,
+  Stack,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField
-} from '@mui/material'
-import api from '@local/hooks/api'
-import { UserRole } from "@local/types/User"
+  Text,
+  TextInput,
+} from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { modals } from '@mantine/modals'
+import { updateUser, useUserlist } from '@local/hooks/useUserlist'
 import { ProtectedPage } from '@local/components/ProtectedPage'
-import type { User } from "@local/types/User"
-import type { SetStateAction } from 'react'
-
-function UserList() {
-  const [users, setUsers] = useState<Array<User>>([])
-  const [loading, setLoading] = useState<boolean>(true)
-  const [page, setPage] = useState<number>(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [totalUsers, setTotalUsers] = useState(0)
-  const [editDialog, setEditDialog] = useState(false)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
-
-  const roleOptions = Object.entries(UserRole)
-    .filter(([key]) => isNaN(Number(key)))
-    .map(([key, value]) => ({
-      id: value,
-      name: key
-    }))
-
-  async function fetchUsers() {
-    try {
-      setLoading(true)
-      const response = await api.get(
-        `/users/get-users?offset=${page * rowsPerPage}&limit=${rowsPerPage}`
-      )
-      setUsers(response.data.users)
-      setTotalUsers(response.data.total)
-    } catch (error) {
-      console.error('Error fetching users:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleEdit = (user: any) => {
-    setEditingUser(user)
-    setEditDialog(true)
-  }
-
-  const handleSave = async () => {
-    try {
-      await api.put(`/users/update-user/${editingUser!.id_utente}`,
-        {
-          'user_data': editingUser
-        }).then((response) => {
-          if (response.status === 200) {
-            alert(response.data.message)
-          }
-        }).catch((error) => {
-          console.error(error)
-          alert(`Request failed with status code ${error.response.data.detail}`)
-        })
-      setEditDialog(false)
-      void fetchUsers()
-    } catch (error) {
-      console.error('Error updating user:', error)
-    }
-  }
-
-  const handleChange = (field: keyof User, value: string | number | null) => {
-    if (editingUser) {
-      setEditingUser((prev) => {
-        if (!prev) return null
-        return {
-          ...prev,
-          [field]: value
-        }
-      })
-    }
-  }
-
-  useEffect(() => {
-    void fetchUsers()
-  }, [page, rowsPerPage])
-
-  function handleChangePage(_event: any, newPage: SetStateAction<number>) {
-    setPage(newPage)
-  }
-
-  function handleChangeRowsPerPage(event: { target: { value: string } }) {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  if (loading) {
-    return (
-      <>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
-          <CircularProgress />
-        </Box>
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Username</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user: User) => (
-                <TableRow key={user.id_utente}>
-                  <TableCell>{user.id_utente}</TableCell>
-                  <TableCell>{`${user.nome} ${user.cognome}`}</TableCell>
-                  <TableCell>{user.username}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.ruolo}</TableCell>
-                  <TableCell>
-                    <Button variant={'outlined'} onClick={() => handleEdit(user)}>
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          component="div"
-          count={totalUsers}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-        />
-      </Paper>
-
-      <Dialog open={editDialog} onClose={() => setEditDialog(false)}>
-        <DialogTitle>Edit User</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
-              label="First Name"
-              value={editingUser?.nome || ''}
-              onChange={(e) => handleChange('nome', e.target.value)}
-            />
-            <TextField
-              label="Last Name"
-              value={editingUser?.cognome || ''}
-              onChange={(e) => handleChange('cognome', e.target.value)}
-            />
-            <TextField
-              label="Email"
-              value={editingUser?.email || ''}
-              onChange={(e) => handleChange('email', e.target.value)}
-            />
-            <FormControl>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={editingUser?.ruolo || ''}
-                onChange={(e) => handleChange('ruolo', e.target.value)}
-              >
-                {roleOptions.map((role) => (
-                  <MenuItem key={role.id} value={role.id}>
-                    {`${role.name} (${role.id})`}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  )
-}
+import { UserRole } from '@local/types/user'
+import type { User } from '@local/types/user'
 
 export const Route = createFileRoute('/userlist')({
   component: () => (
@@ -215,6 +27,132 @@ export const Route = createFileRoute('/userlist')({
   ),
 })
 
+const roleOptions = Object.entries(UserRole)
+  .filter(([key]) => isNaN(Number(key)))
+  .map(([key, value]) => ({
+    value: String(value),
+    label: `${key} (${value})`
+  }))
 
+interface EditUserFormProps {
+  user: User
+  onSaved: () => void
+}
 
+function EditUserForm({ user, onSaved }: EditUserFormProps) {
+  const form = useForm({
+    initialValues: {
+      nome: user.nome,
+      cognome: user.cognome,
+      email: user.email,
+      ruolo: user.ruolo,
+    },
+  })
 
+  async function handleSave() {
+    const updatedUser = { ...user, ...form.values }
+    const result = await updateUser(user.id, updatedUser)
+    if (result.success) {
+      modals.closeAll()
+      onSaved()
+    }
+  }
+
+  return (
+    <>
+      <Stack gap="sm">
+        <TextInput label="First Name" {...form.getInputProps('nome')} />
+        <TextInput label="Last Name" {...form.getInputProps('cognome')} />
+        <TextInput label="Email" {...form.getInputProps('email')} />
+        <Select
+          label="Role"
+          data={roleOptions}
+          value={String(form.values.ruolo)}
+          onChange={(val) => form.setFieldValue('ruolo', val != null ? Number(val) : 1)}
+        />
+      </Stack>
+      <Group justify="flex-end" mt="md">
+        <Button variant="default" onClick={() => modals.closeAll()}>Cancel</Button>
+        <Button onClick={handleSave}>Save</Button>
+      </Group>
+    </>
+  )
+}
+
+function UserList() {
+  const [page, setPage] = useState<number>(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  const { users, loading, totalUsers, refetch } = useUserlist(page, rowsPerPage)
+
+  const handleEdit = (user: User) => {
+    modals.open({
+      title: 'Edit User',
+      centered: true,
+      children: <EditUserForm user={user} onSaved={refetch} />,
+    })
+  }
+
+  if (loading) {
+    return (
+      <Box className="flex justify-center items-center min-w-96">
+        <Loader size="lg" />
+      </Box>
+    )
+  }
+
+  return (
+    <>
+      <Paper className="w-full overflow-hidden">
+        <Table stickyHeader>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>ID</Table.Th>
+              <Table.Th>Name</Table.Th>
+              <Table.Th>Username</Table.Th>
+              <Table.Th>Email</Table.Th>
+              <Table.Th>Role</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {users.map((user: User) => (
+              <Table.Tr key={user.id}>
+                <Table.Td>{user.id}</Table.Td>
+                <Table.Td>{`${user.nome} ${user.cognome}`}</Table.Td>
+                <Table.Td>{user.username}</Table.Td>
+                <Table.Td>{user.email}</Table.Td>
+                <Table.Td>{user.ruolo}</Table.Td>
+                <Table.Td>
+                  <Button variant="outline" size="xs" onClick={() => handleEdit(user)}>
+                    Edit
+                  </Button>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+        <Group justify="space-between" p="sm">
+          <Group gap="xs">
+            <Text size="sm">Rows per page:</Text>
+            <Select
+              data={['5', '10', '25', '50'].map(String)}
+              value={String(rowsPerPage)}
+              onChange={(val) => {
+                setRowsPerPage(parseInt(val || '10', 10))
+                setPage(0)
+              }}
+              size="xs"
+              className="w-16"
+            />
+          </Group>
+          <Group gap="xs">
+            <Button variant="subtle" size="xs" disabled={page === 0} onClick={() => setPage(page - 1)}>Prev</Button>
+            <Text size="sm">Page {page + 1} of {Math.ceil(totalUsers / rowsPerPage)}</Text>
+            <Button variant="subtle" size="xs" disabled={page >= Math.ceil(totalUsers / rowsPerPage) - 1} onClick={() => setPage(page + 1)}>Next</Button>
+          </Group>
+        </Group>
+      </Paper>
+    </>
+  )
+}

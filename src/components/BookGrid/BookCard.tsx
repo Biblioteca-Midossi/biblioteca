@@ -1,11 +1,7 @@
-import {
-  Box, Card, CardContent, CardMedia, IconButton, Typography
-} from '@mui/material'
-import { MoreVertRounded } from '@mui/icons-material'
-import { BookGridStyles } from '@local/styles/bookGridStyles'
-import host from "@local/hooks/getHost"
-import { useNavigate } from "@tanstack/react-router"
-import type { Book } from '@local/types/Book'
+import { ActionIcon, Box, Card, Image, Text } from '@mantine/core'
+import { IconDotsVertical } from '@tabler/icons-react'
+import { useNavigate } from '@tanstack/react-router'
+import type { Book } from '@local/types/book'
 import type { MouseEvent } from 'react'
 
 interface BookCardProps {
@@ -18,65 +14,57 @@ export function BookCard({ book, showId, onMenuOpen }: BookCardProps) {
   const navigate = useNavigate()
 
   console.debug(`book cover: ${book.coverUrl}`)
-  // console.debug(!book.coverUrl!.includes("undefined"))
-  // console.debug(typeof book.coverUrl === "string")
   return (
-    <Card sx={BookGridStyles.bookCard}>
-      <CardMedia
-        sx={{
-          aspectRatio: 1/1.5
-        }}
-        component={'img'}
-        image={!book.coverUrl!.includes("undefined")
-          ? `${book.coverUrl}`
-          : `${host}/api/assets/thumbnails/.no-thumbnail-found`
-        }
-        draggable={false}
-        onClick={() => {
-          navigate({ to: `/books/${book.id}` })
-        }}
-      />
-      <CardContent
-        sx={{
-          padding: 0
-        }}
-      >
-        <Typography
-          variant={'subtitle1'}
-          noWrap={true}
-          sx={BookGridStyles.bookTitle}
+    <Card padding="sm">
+      <Card.Section>
+        <Image
+          className="aspect-1/1.5 cursor-pointer"
+          src={typeof (book.coverUrl) === 'string'
+            ? `/api/${book.coverUrl}`
+            : `/api/assets/thumbnails/.no-thumbnail-found.png`
+          }
+          alt={book.titolo ?? 'Book cover'}
+          draggable={false}
+          onClick={() => {
+            navigate({ to: `/books/${book.id}` })
+          }}
+        />
+      </Card.Section>
+      <Box p={0}>
+        <Text
+          size="sm"
+          fw={500}
+          truncate
         >
           {book.titolo}
-        </Typography>
-        <Typography
-          variant={'subtitle2'}
-          noWrap={true}
-          sx={BookGridStyles.bookAuthor}
-          color={'textSecondary'}
+        </Text>
+        <Text
+          size="xs"
+          c="dimmed"
+          truncate
         >
           {book.autori ?? "Autore Sconosciuto"}
-        </Typography>
+        </Text>
         {showId && (
-          <Typography
-            variant={'subtitle2'}
-            noWrap={true}
-            sx={BookGridStyles.bookAuthor}
-            color={'textSecondary'}
+          <Text
+            size="xs"
+            c="dimmed"
+            truncate
           >
             {book.id}
-          </Typography>
+          </Text>
         )}
         {onMenuOpen && (
-          <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-            <IconButton
+          <Box className="w-full flex justify-end">
+            <ActionIcon
+              variant="subtle"
               onClick={(e) => onMenuOpen(e, book)}
             >
-              <MoreVertRounded />
-            </IconButton>
+              <IconDotsVertical size={16} />
+            </ActionIcon>
           </Box>
         )}
-
-      </CardContent>
+      </Box>
     </Card>
   )
 }

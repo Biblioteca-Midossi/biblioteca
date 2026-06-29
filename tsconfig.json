@@ -13,7 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@local/*": ["./src/*"]
     },
@@ -22,7 +21,7 @@
   "include": [
     "src/**/*",
     "eslint.config.ts",
-    "vite.config.ts",
+    "vite.config.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "api"],
 }

@@ -1,7 +1,10 @@
 import * as path from "path"
 import { defineConfig } from 'vite'
-import react from "@vitejs/plugin-react-swc"
+import react from "@vitejs/plugin-react"
 import tanstackRouter from "@tanstack/router-plugin/vite"
+import tailwindcss from "@tailwindcss/vite"
+import analyzer from "vite-bundle-analyzer"
+import type { PluginOption } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -13,12 +16,14 @@ export default defineConfig({
 
   plugins: [
     tanstackRouter({
-      target: 'react',
+      target: "react",
       autoCodeSplitting: true,
-      routesDirectory: './src/routes',
-      generatedRouteTree: './src/routeTree.gen.ts',
+      routesDirectory: "./src/routes",
+      generatedRouteTree: "./src/routeTree.gen.ts",
     }),
-    react()
+    react(),
+    tailwindcss({ optimize: { minify: true } }) as PluginOption,
+    analyzer()
   ],
 
   // Developement server
@@ -28,7 +33,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:4000',
         changeOrigin: true,
       }
     }

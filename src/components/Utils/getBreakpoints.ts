@@ -1,29 +1,16 @@
-import { useMediaQuery, useTheme } from "@mui/material"
+import { useMediaQuery } from '@mantine/hooks'
 
 export function getBreakpoints() {
-  const theme = useTheme()
-  const XL = useMediaQuery(theme.breakpoints.only("xl"))
-  const LG = useMediaQuery(theme.breakpoints.only("lg"))
-  const MD = useMediaQuery(theme.breakpoints.only("md"))
-  const SM = useMediaQuery(theme.breakpoints.only("sm"))
-  const XS = useMediaQuery(theme.breakpoints.only("xs"))
+  const XL = useMediaQuery('(min-width: 1536px)')
+  const LG = useMediaQuery('(min-width: 1200px) and (max-width: 1535px)')
+  const MD = useMediaQuery('(min-width: 900px) and (max-width: 1199px)')
+  const SM = useMediaQuery('(min-width: 600px) and (max-width: 899px)')
+  const XS = useMediaQuery('(max-width: 599px)')
 
-  if (XL) {
-    return 'xl'
-  }
-  else if (LG) {
-   return 'lg'
-  }
-  else if (MD) {
-    return 'md'
-  }
-  else if (SM) {
-    return 'sm'
-  }
-  else if (XS) {
-    return 'xs'
-  }
-  else {
-    return 'md' // fallback
-  }
+  if (XL) return 'xl'
+  if (LG) return 'lg'
+  if (MD) return 'md'
+  if (SM) return 'sm'
+  if (XS) return 'xs'
+  return 'md'
 }

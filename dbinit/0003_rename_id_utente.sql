@@ -1,0 +1,1 @@
+ALTER TABLE utenti RENAME COLUMN id to id;

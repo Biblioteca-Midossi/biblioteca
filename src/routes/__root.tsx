@@ -1,32 +1,72 @@
-import '@fontsource/varela-round'
-import { CssBaseline, ThemeProvider } from '@mui/material'
-import { createRootRoute } from '@tanstack/react-router'
+import { AppShell, MantineProvider } from '@mantine/core'
+import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { Suspense } from 'react'
-import { AuthProvider } from '@local/contexts/AuthContext'
 import { LoadingScreen } from '@local/components/LoadingScreen'
-import { AppBarDrawer } from "@local/components/Drawer/AppBarDrawer"
+import { useAuthStore } from '@local/hooks/useAuthStore'
 import theme from '@local/theme'
+import { Header } from '@local/components/Drawer/Header'
+import { NotFoundPage } from "@local/routes/-404"
+import { ErrorPage } from "@local/routes/-error"
+import { Notifications } from "@mantine/notifications"
+import { ModalsProvider } from "@mantine/modals"
 import type { ReactNode } from 'react'
 
 export const Route = createRootRoute({
+  head: () => ({
+    meta: [
+      {
+        name: 'description',
+        content: 'Biblioteca digitale per IIS U. Midossi'
+      },
+      {
+        title: 'Biblioteca Midossi'
+      }
+    ],
+    links: [
+      {
+        rel: 'icon',
+        href: '/assets/logos/midossi.png'
+      },
+    ]
+  }),
+
+  beforeLoad: async () => {
+    const { fetchUser } = useAuthStore.getState()
+    await fetchUser()
+  },
+
+  notFoundComponent: () => <NotFoundPage/>,
+
+  errorComponent: ({ error }) => (
+    <ErrorPage error={error}/>
+  ),
+
   shellComponent: (shell) => (
-    <AuthProvider>
-      <RootLayout children={shell.children} />
-    </AuthProvider>
+    <RootLayout children={shell.children} />
   ),
 })
 
 function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>
-      <CssBaseline />
-      <AppBarDrawer />
-      <Suspense fallback={<LoadingScreen />}>
-        {children}
-      </Suspense>
-    </ThemeProvider>
+    <>
+      <HeadContent />
+      <MantineProvider theme={theme} defaultColorScheme="auto">
+        <ModalsProvider>
+          <Notifications/>
+          <AppShell header={{ height: 56 }}>
+            <AppShell.Header>
+              <Header />
+            </AppShell.Header>
+
+            <AppShell.Main>
+              <Suspense fallback={<LoadingScreen />}>
+                {children}
+              </Suspense>
+            </AppShell.Main>
+          </AppShell>
+        </ModalsProvider>
+      </MantineProvider>
+      <Scripts />
+    </>
   )
 }
-
-
-

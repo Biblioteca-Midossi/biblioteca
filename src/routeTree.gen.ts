@@ -14,8 +14,8 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as UsersMeRouteImport } from './routes/users.me'
-import { Route as BooksIdRouteImport } from './routes/books.$id'
+import { Route as UsersMeRouteImport } from './routes/users/me'
+import { Route as BooksIdRouteImport } from './routes/books/$id'
 
 const UserlistRoute = UserlistRouteImport.update({
   id: '/userlist',
