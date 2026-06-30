@@ -65,10 +65,6 @@ function Dashboard() {
     void fetchData()
   }, [])
 
-  function handleCreateBook() {
-    openBookAddModal()
-  }
-
   return (
     <Box className="flex flex-col items-center w-full py-4">
       <Container fluid className="max-w-full px-8">
@@ -89,7 +85,7 @@ function Dashboard() {
         <Box mb="xl">
           <Group align="center">
             <Title order={4} fw={600}>Recently Added Books</Title>
-            <Button leftSection={<IconPlus size={16} />} onClick={handleCreateBook}>
+            <Button leftSection={<IconPlus size={16} />} onClick={openBookAddModal}>
               New Book
             </Button>
           </Group>
@@ -141,7 +137,7 @@ function Dashboard() {
               ))
             ) : newUsers.length > 0 ? (
               newUsers.map((user) => (
-                <UserCard user={user}/>
+                <UserCard key={user.id} user={user}/>
               ))
             ) : (
               <Text c="dimmed">No new users yet</Text>

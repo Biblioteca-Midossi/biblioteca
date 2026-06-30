@@ -48,7 +48,9 @@ class RequireRole:
 
 
 @router.get("/me", response_model=UserProfileOut)
-async def get_profile(payload: TokenPayload = Depends(auth.access_token_required)) -> UserProfileOut:
+async def get_profile(
+    payload: TokenPayload = Depends(auth.access_token_required),
+) -> UserProfileOut:
     profile = await get_user_profile(int(payload.sub))
     if not profile:
         raise HTTPException(status_code=404, detail="Utente non trovato")
@@ -121,7 +123,11 @@ async def update_profile(
     return MessageResponse(message="Profilo aggiornato con successo")
 
 
-@router.get("/get-users", response_model=UsersListResponse, dependencies=[Depends(RequireRole(3))])
+@router.get(
+    "/get-users",
+    response_model=UsersListResponse,
+    dependencies=[Depends(RequireRole(3))],
+)
 async def get_users(
     offset: int = Query(default=0, ge=0), limit: int = Query(default=10, ge=1, le=100)
 ):
@@ -160,8 +166,14 @@ async def get_users(
     return UsersListResponse(users=users, total=total_users)
 
 
-@router.get("/recent", response_model=UsersRecentListResponse, dependencies=[Depends(RequireRole(3))])
-async def get_recent_users(limit: int = Query(default=5, ge=1, le=100)) -> UsersRecentListResponse | MessageResponse:
+@router.get(
+    "/recent",
+    response_model=UsersRecentListResponse,
+    dependencies=[Depends(RequireRole(3))],
+)
+async def get_recent_users(
+    limit: int = Query(default=5, ge=1, le=100),
+) -> UsersRecentListResponse | MessageResponse:
     """Return the most recent users by taking the highest id values.
     Protected to role >= 3 to match existing users listing.
     """

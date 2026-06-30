@@ -39,7 +39,7 @@ export function BookGridBase() {
         onPageChange={setPage}
         onSearch={handleSearch}
         renderBookCard={(book: Partial<Book>) => (
-          <BookCard key={book.id} book={book} />
+          <BookCard book={book} />
         )}
       />
       <Divider className="w-4/5 m-auto"/>

@@ -13,10 +13,10 @@ import {
 import { IconBriefcase, IconMail } from '@tabler/icons-react'
 import { IstitutoEnum, UserRole } from '@local/types/user'
 import { ProtectedPage } from '@local/components/ProtectedPage'
-import { useAuthStore } from "@local/hooks/useAuthStore"
+import { useAuth } from '@local/hooks/authContext'
 
 function SelfUserPage() {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   if (!user) throw redirect({ to: "/login" })
 

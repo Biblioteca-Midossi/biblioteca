@@ -1,7 +1,7 @@
 import { LoadingScreen } from '@local/components/LoadingScreen'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { useAuthStore } from '@local/hooks/useAuthStore'
+import { useAuth } from '@local/hooks/authContext'
 import type { ReactElement } from 'react'
 
 interface ProtectedPageProps {
@@ -10,7 +10,7 @@ interface ProtectedPageProps {
 }
 
 export function ProtectedPage({ levelOfProtection, children }: ProtectedPageProps) {
-  const { user, loading } = useAuthStore()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {

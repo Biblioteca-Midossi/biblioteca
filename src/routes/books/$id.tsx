@@ -30,7 +30,7 @@ function BookPage() {
             <Image
               src={typeof (singleBook.coverUrl) === 'string'
                 ? `/api/${singleBook.coverUrl}`
-                : `/api/assets/thumbnails/.no-thumbnail-found.png`
+                : `/api/uploads/thumbnails/.no-thumbnail-found.png`
               }
               alt={`${singleBook.titolo}'s cover`}
               m="auto"

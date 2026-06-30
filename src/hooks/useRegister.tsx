@@ -1,14 +1,14 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useAuthStore } from "@local/hooks/useAuthStore"
 import { useEffect } from "react"
 import { useForm } from "@mantine/form"
 import { modals } from "@mantine/modals"
 import { Button, Group, Text } from "@mantine/core"
 import { register } from "@local/hooks/auth"
+import { useAuth } from "@local/hooks/authContext"
 
 export function useRegister() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user } = useAuth()
 
   useEffect(() => {
     if (user) {

@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate  } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
 import { useEffect } from 'react'
-import { useAuthStore } from '@local/hooks/useAuthStore'
+import { api } from '@local/hooks/api'
+import { useAuth } from '@local/hooks/authContext'
 
 export const Route = createFileRoute('/login')({
   component: Login,
@@ -18,8 +19,7 @@ function Login() {
   })
 
   const navigate = useNavigate()
-
-  const { login, user } = useAuthStore()
+  const { user } = useAuth()
 
   useEffect(() => {
     if (user) {
@@ -34,7 +34,7 @@ function Login() {
 
   async function handleSubmit(values: { username: string; password: string }) {
     try {
-      await login(values.username, values.password)
+      await api.post('/auth/login', { login: values.username, password: values.password })
       navigate({ to: '/' })
     } catch (error) {
       notifications.show({

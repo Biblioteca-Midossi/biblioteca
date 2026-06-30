@@ -54,8 +54,11 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
       form.setFieldValue('preview', '')
       return
     }
-    form.setFieldValue('copertina', e.target.files[0])
-    form.setFieldValue('preview', URL.createObjectURL(e.target.files[0]))
+
+    if (e.target.files[0]) {
+      form.setFieldValue('copertina', e.target.files[0])
+      form.setFieldValue('preview', URL.createObjectURL(e.target.files[0]))
+    }
   }
 
   async function handleSubmit(values: BookFormValues) {

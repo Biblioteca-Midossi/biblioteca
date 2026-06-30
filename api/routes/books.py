@@ -116,7 +116,9 @@ async def get_books(
 
 
 @router.get("/recent", response_model=RecentBooksListResponse)
-async def get_recent_books(limit: int = Query(5, alias="limit", ge=1, le=50)) -> RecentBooksListResponse:
+async def get_recent_books(
+    limit: int = Query(5, alias="limit", ge=1, le=50),
+) -> RecentBooksListResponse:
     """Return the most recently added books by picking the highest id_libro values.
     The result is ordered by id_libro desc and limited by `limit`.
     """
@@ -245,7 +247,9 @@ async def create_book(data: Request, thumbnail: UploadFile | None = File(None)):
         raise HTTPException(status_code=500, detail="Errore interno del server")
 
 
-@router.put("/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))])
+@router.put(
+    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))]
+)
 async def update_book(
     updated_book: Request,
     book_id: int = Path(...),
@@ -279,7 +283,9 @@ async def update_book(
                 "descrizione": "descrizione",
             }
             for json_key, db_col in field_map.items():
-                val = getattr(data, json_key.replace("casaEditrice", "casa_editrice"), None)
+                val = getattr(
+                    data, json_key.replace("casaEditrice", "casa_editrice"), None
+                )
                 if val is not None:
                     update_fields[db_col] = val
 
@@ -290,11 +296,7 @@ async def update_book(
                 )
 
                 # Ensure genres is a list
-                genres = (
-                    data.genere
-                    if isinstance(data.genere, list)
-                    else [data.genere]
-                )
+                genres = data.genere if isinstance(data.genere, list) else [data.genere]
 
                 for genre in genres:
                     # Find or insert genre
@@ -384,7 +386,7 @@ async def update_book(
                 )
 
             if file and file.filename:
-                save_dir = "./assets/thumbnails/"
+                save_dir = "./uploads/thumbnails/"
                 existing = os.path.join(save_dir, f"{book_id}.png")
 
                 # Delete existing file if it exists
@@ -423,7 +425,9 @@ async def update_book(
         raise HTTPException(status_code=500, detail="Errore interno del server")
 
 
-@router.delete("/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))])
+@router.delete(
+    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))]
+)
 async def delete_book(book_id: int = Path(...)):
     try:
         with PSQLDatabase() as db:

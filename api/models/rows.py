@@ -7,6 +7,7 @@ from api.models.enums import Istituto
 
 class BookListRow(BaseModel):
     """Row shape for the GET /books list query."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id_libro: int
@@ -26,6 +27,7 @@ class BookListRow(BaseModel):
 
 class RecentBookRow(BaseModel):
     """Row shape for the GET /books/recent query."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id_libro: int
@@ -39,6 +41,7 @@ class RecentBookRow(BaseModel):
 
 class BookDetailRow(BaseModel):
     """Row shape for the GET /books/{id} query."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id_libro: int
@@ -56,6 +59,7 @@ class BookDetailRow(BaseModel):
 
 class BookThumbnailRow(BaseModel):
     """Row shape for the DELETE /books/{id} thumbnail query."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     thumbnail_path: str | None = None
@@ -63,6 +67,7 @@ class BookThumbnailRow(BaseModel):
 
 class UserListRow(BaseModel):
     """Row shape for user listing queries."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
@@ -76,6 +81,7 @@ class UserListRow(BaseModel):
 
 class UserLoginRow(BaseModel):
     """Row shape for the login query on utenti."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
@@ -87,6 +93,7 @@ class UserLoginRow(BaseModel):
 
 class UserProfileRow(BaseModel):
     """Full row shape from utenti (SELECT *)."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
@@ -107,6 +114,7 @@ class UserProfileRow(BaseModel):
 
 class UserBasicRow(BaseModel):
     """Minimal row shape for id/istituto/ruolo lookups."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     id: int

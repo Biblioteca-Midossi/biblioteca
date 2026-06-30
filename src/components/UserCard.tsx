@@ -15,7 +15,7 @@ export function UserCard({ user }: UserCardProps) {
           color="initials"
           size={50}
         />
-        <Box>
+        <Box key={user.id}>
           <Text size="sm" fw={600}>{user.nome} {user.cognome}</Text>
           <Text size="xs" c="dimmed">@{user.username}</Text>
         </Box>

@@ -1,6 +1,6 @@
 import { Divider, Drawer, Stack, Text, UnstyledButton } from '@mantine/core'
-import {useLocation, useNavigate} from '@tanstack/react-router'
-import { useAuthStore } from '@local/hooks/useAuthStore'
+import { useLocation, useNavigate } from '@tanstack/react-router'
+import { useAuth } from '@local/hooks/authContext'
 
 interface CustomDrawerProps {
   opened: boolean
@@ -8,7 +8,7 @@ interface CustomDrawerProps {
 }
 
 export function CustomDrawer({ opened, onClose }: CustomDrawerProps) {
-  const { user } = useAuthStore()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const pathname = useLocation({ select: (location) => location.pathname })
 

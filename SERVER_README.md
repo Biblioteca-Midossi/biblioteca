@@ -8,7 +8,7 @@ This is the complete port of the FastAPI backend to Hono with Bun runtime.
 - `/api/auth` - Authentication (register, login, logout, token refresh, auth check)
 - `/api/books` - Book management (list, get, create, update, delete)
 - `/api/users` - User management (profile get/update)
-- `/api/assets` - Static assets (thumbnails, profile pictures)
+- `/api/uploads` - Uploaded assets (thumbnails, profile pictures)
 
 ✅ **Database:**
 - PostgreSQL using Bun's native SQL driver
@@ -93,9 +93,9 @@ The server will start on `http://localhost:8001`
 - `GET /api/users/me` - Get current user profile (requires auth)
 - `PUT /api/users/me` - Update current user profile (requires auth)
 
-### Assets (`/api/assets`)
-- `GET /api/assets/thumbnails/:bookId` - Get book thumbnail
-- `GET /api/assets/profile_pictures/:userId` - Get user profile picture
+### Uploaded assets (`/api/uploads`)
+- `GET /api/uploads/thumbnails/:bookId` - Get book thumbnail
+- `GET /api/uploads/profile_pictures/:userId` - Get user profile picture
 
 ## Differences from FastAPI version
 
@@ -114,7 +114,7 @@ src/server/
 │   ├── auth.ts            # Authentication routes
 │   ├── books.ts           # Book management routes
 │   ├── users.ts           # User management routes
-│   └── assets.ts          # Static asset routes
+│   └── uploads.ts         # Uploaded asset routes
 ├── services/
 │   ├── user-service.ts    # User database operations
 │   └── db-operations.ts   # Book database operations

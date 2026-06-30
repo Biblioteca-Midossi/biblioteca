@@ -25,7 +25,7 @@ async def upload_thumbnail(file, book_id):
         png_bytes = await convert_to_png(await file.read())
 
         # Make sure the directory is there
-        save_directory = "./assets/thumbnails/"
+        save_directory = "./uploads/thumbnails/"
         os.makedirs(save_directory, exist_ok=True)
 
         # Save the uploaded file
@@ -54,7 +54,7 @@ async def upload_profile_picture(file, user_id):
         png_bytes = await convert_to_png(await file.read())
 
         # Make sure the directory is there
-        save_directory = "./assets/profile_pictures/"
+        save_directory = "./uploads/profile_pictures/"
         os.makedirs(save_directory, exist_ok=True)
 
         # Save the uploaded file

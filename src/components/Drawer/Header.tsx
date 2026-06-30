@@ -4,13 +4,14 @@ import { DarkModeSwitch } from '@local/components/Switches/DarkModeSwitch'
 import { useDisclosure } from '@mantine/hooks'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { CustomDrawer } from '@local/components/Drawer/CustomDrawer'
-import { useAuthStore } from '@local/hooks/useAuthStore'
+import { useAuth } from '@local/hooks/authContext'
+import { api } from '@local/hooks/api'
 
 export function Header() {
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false)
   const [menuOpened, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false)
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user } = useAuth()
 
   return (
     <>
@@ -37,7 +38,7 @@ export function Header() {
             <Image
               src="/assets/logos/midossi.png"
               alt="Midossi Logo"
-              h={48}
+              h={40}
               bg='white'
               radius="xl"
             />
@@ -89,7 +90,7 @@ export function Header() {
                   Settings
                 </Menu.Item>
                 <Menu.Item
-                  onClick={async () => { closeMenu(); await logout(); navigate({ to: '/' }) }}
+                  onClick={async () => { closeMenu(); await api.post('/auth/logout'); navigate({ to: '/' }) }}
                   leftSection={<IconLogout size={16} />}
                 >
                   Logout

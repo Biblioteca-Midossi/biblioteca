@@ -21,7 +21,7 @@ export function BookCard({ book, showId, onMenuOpen }: BookCardProps) {
           className="aspect-1/1.5 cursor-pointer"
           src={typeof (book.coverUrl) === 'string'
             ? `/api/${book.coverUrl}`
-            : `/api/assets/thumbnails/.no-thumbnail-found.png`
+            : `/api/uploads/thumbnails/.no-thumbnail-found.png`
           }
           alt={book.titolo ?? 'Book cover'}
           draggable={false}

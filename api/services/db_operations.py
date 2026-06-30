@@ -2,7 +2,12 @@ import psycopg
 from fastapi import HTTPException, UploadFile
 from starlette.responses import JSONResponse
 from api.exceptions import InvalidRequestError
-from api.models.requests import AutoreData, CollocazioneData, CreateBookPayload, LibroData
+from api.models.requests import (
+    AutoreData,
+    CollocazioneData,
+    CreateBookPayload,
+    LibroData,
+)
 from api.services.file_operations import upload_thumbnail
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
@@ -102,7 +107,9 @@ def insert_libro_autori(id_libro: int, id_autore: int):
         db.commit()
 
 
-async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFile | None):
+async def insert_book_into_database(
+    data: CreateBookPayload, thumbnail: UploadFile | None
+):
     collocazione = CollocazioneData(
         istituto=data.istituto,
         scaffale=data.scaffale,
@@ -117,7 +124,9 @@ async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFi
     )
 
     # Parse authors
-    author_names = [name.strip() for names in data.nome_autore for name in names.split(",")]
+    author_names = [
+        name.strip() for names in data.nome_autore for name in names.split(",")
+    ]
     author_surnames = [
         surname.strip()
         for surnames in data.cognome_autore

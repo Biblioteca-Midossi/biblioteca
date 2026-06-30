@@ -1,6 +1,4 @@
 import axios from 'axios'
-import { useAuthStore } from "@local/hooks/useAuthStore"
-
 
 axios.defaults.withCredentials = true
 axios.defaults.headers.post['Content-Type'] = 'application/json'
@@ -9,6 +7,17 @@ export const api = axios.create({
   baseURL: `/api`,
   withCredentials: true,
 })
+
+let logoutCallback: (() => Promise<void>) | null = null
+let activeSession = false
+
+export function setLogoutCallback(cb: () => Promise<void>) {
+  logoutCallback = cb
+}
+
+export function setActiveSession(v: boolean) {
+  activeSession = v
+}
 
 // silent token refresh on 401
 api.interceptors.response.use(
@@ -24,7 +33,10 @@ api.interceptors.response.use(
         await api.post('/auth/refresh', undefined, { _skipAuthRefresh: true } as any)
         return api(err.config)
       } catch {
-        if (useAuthStore.getState().user) await useAuthStore.getState().logout()
+        if (activeSession) {
+          activeSession = false
+          if (logoutCallback) await logoutCallback()
+        }
       }
     }
     return Promise.reject(err)

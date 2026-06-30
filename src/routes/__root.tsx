@@ -1,8 +1,8 @@
 import { AppShell, MantineProvider } from '@mantine/core'
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import { Suspense } from 'react'
 import { LoadingScreen } from '@local/components/LoadingScreen'
-import { useAuthStore } from '@local/hooks/useAuthStore'
+import { api, setActiveSession } from '@local/hooks/api'
 import theme from '@local/theme'
 import { Header } from '@local/components/Drawer/Header'
 import { NotFoundPage } from "@local/routes/-404"
@@ -10,8 +10,9 @@ import { ErrorPage } from "@local/routes/-error"
 import { Notifications } from "@mantine/notifications"
 import { ModalsProvider } from "@mantine/modals"
 import type { ReactNode } from 'react'
+import type { AuthState } from '@local/hooks/authContext'
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
   head: () => ({
     meta: [
       {
@@ -31,8 +32,15 @@ export const Route = createRootRoute({
   }),
 
   beforeLoad: async () => {
-    const { fetchUser } = useAuthStore.getState()
-    await fetchUser()
+    try {
+      const { data } = await api.get('/users/me')
+      console.debug(data)
+      setActiveSession(true)
+      return { auth: { user: data, loading: false } }
+    } catch {
+      setActiveSession(false)
+      return { auth: { user: null, loading: false } }
+    }
   },
 
   notFoundComponent: () => <NotFoundPage/>,
