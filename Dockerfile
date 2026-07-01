@@ -1,5 +1,5 @@
 ## Build stage
-FROM oven/bun:1-debian AS build
+FROM oven/bun:1 AS build
 WORKDIR /app
 
 COPY package.json bun.lock ./
