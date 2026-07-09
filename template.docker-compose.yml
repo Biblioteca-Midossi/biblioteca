@@ -18,7 +18,7 @@ services:
 
   postgres:
     image: postgres:18-bookworm
-    container_name: 'biblioteca-pg'
+    container_name: 'biblioteca-db'
     env_file: .env
 #    ports:
 #      - '5432:5432'

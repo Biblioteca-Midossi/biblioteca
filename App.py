@@ -6,29 +6,30 @@ from api.routes import register_routes
 from api.auth import auth
 
 
-biblioteca = FastAPI(
-    root_path="/api",
+biblioteca = FastAPI()
+
+api = FastAPI(
     swagger_ui_parameters={
         "syntaxHighlight.theme": "obsidian",
     },
     redoc_url=None,
 )
 
-# register error handlers and routes at module level, not lifespan
-auth.handle_errors(biblioteca)
+auth.handle_errors(api)
+register_routes(api)
 
-biblioteca.mount("/assets", StaticFiles(directory="dist/assets", name="assets"))
-biblioteca.mount("/uploads", StaticFiles(directory="uploads", name="uploads"))
+api.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
+biblioteca.mount("/api", api)
 
-@biblioteca.get("/{full_path:path")
-def spa_fallback(full_path: str):
-    return FileResponse("dist/index.html")
-
-
-register_routes(biblioteca)
+biblioteca.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
 
 
 @biblioteca.get("/health")
 async def root():
     return {"status": "ok"}
+
+
+@biblioteca.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    return FileResponse("dist/index.html")

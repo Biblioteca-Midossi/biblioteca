@@ -37,7 +37,7 @@ const useBookStore = create<BookState>((_set, _get) => {
           const formattedBooks = response.data.books.map((book: Book) => ({
             ...book,
             autori: book.autori.join(', '),
-            coverUrl: `${api.defaults.baseURL}/${book.coverUrl}`
+            coverUrl: `${book.coverUrl}`
           }))
           _set({ books: formattedBooks, maxpage: response.data.maxpage })
         } else if (response.status === 204) {
