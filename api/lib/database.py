@@ -128,14 +128,15 @@ def check_admin():
         cursor.execute(
             """
             SELECT COUNT(*)
-            FROM utenti
-            WHERE ruolo = 4
+            FROM utenti u
+            JOIN roles r ON u.role_id = r.id
+            WHERE r.name = 'admin'
             """
         )
         result = cursor.fetchone()
 
         if result and result[0] > 0:
-            log.info("✅ Admin user already exists — skipping admin bootstrap.")
+            log.info("Admin user already exists — skipping admin bootstrap.")
             return
 
         log.info("Admin user not found. Creating initial admin user")
@@ -144,13 +145,12 @@ def check_admin():
         log.info(f"Default password: {default_password}")
         if default_password:
             cursor.execute(
-                """INSERT INTO utenti(cognome, nome, istituto, ruolo, password, username, email)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                """INSERT INTO utenti(cognome, nome, istituto, role_id, password, username, email)
+                   VALUES (%s, %s, %s, (SELECT id FROM roles WHERE name = 'admin'), %s, %s, %s)""",
                 (
                     "Midossi",
                     "Biblioteca",
                     "ITT",
-                    4,
                     bcrypt.hashpw(default_password.encode(), bcrypt.gensalt()).decode(),
                     "support",
                     "support@localhost.com",

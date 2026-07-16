@@ -11,7 +11,7 @@ import {
   Title,
 } from '@mantine/core'
 import { IconBriefcase, IconMail } from '@tabler/icons-react'
-import { IstitutoEnum, UserRole } from '@local/types/user'
+import { IstitutoEnum } from '@local/types/user'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { useAuth } from '@local/hooks/authContext'
 
@@ -47,15 +47,8 @@ function SelfUserPage() {
               <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Group gap="xs" align="center">
                   <IconBriefcase color="var(--mantine-color-blue-6)" size={18} />
-                  <Badge
-                    variant="outline"
-                    color="blue"
-                  >
-                    {
-                      user.ruolo in UserRole
-                        ? UserRole[user.ruolo]
-                        : 'Ruolo Sconosciuto'
-                    }
+                  <Badge variant="outline" color="blue">
+                    {user.roleName}
                   </Badge>
                 </Group>
               </Grid.Col>
@@ -68,8 +61,8 @@ function SelfUserPage() {
         <Title order={4}>Institution Details</Title>
         <Text size="sm">
           Istituto: {
-            user.id_istituto in IstitutoEnum
-              ? IstitutoEnum[user.id_istituto]
+            user.istituto in IstitutoEnum
+              ? IstitutoEnum[user.istituto]
               : 'Non specificato'
           }
         </Text>
@@ -80,7 +73,7 @@ function SelfUserPage() {
 
 export const Route = createFileRoute('/users/me')({
   component: () => (
-    <ProtectedPage levelOfProtection={1}>
+    <ProtectedPage requireAuth>
       <SelfUserPage />
     </ProtectedPage>
   ),

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev:client": "bunx --bun vite",
+    "dev:client": "bunx vite",
     "build": "bunx --bun vite build",
     "fmt": "eslint --fix && uvx ruff format",
     "lint": "eslint && uvx ruff check",
@@ -22,6 +22,7 @@
     "@tanstack/react-router": "^1.170.16",
     "@tanstack/router-plugin": "^1.168.18",
     "axios": "^1.18.1",
+    "mantine-datatable": "^9.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zustand": "^5.0.14"

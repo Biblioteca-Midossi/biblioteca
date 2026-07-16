@@ -1,4 +1,5 @@
 from typing import Optional
+
 from authx import TokenPayload
 from fastapi import (
     APIRouter,
@@ -11,8 +12,12 @@ from fastapi import (
     Request,
 )
 
+from api.auth import auth
+from api.auth.helpers import fetch_user_permissions, require_permission
+from api.lib.database import PSQLDatabase
 from api.lib.logger import log
 from api.models.auth import UserProfileUpdate
+from api.models.requests import UpdateUserPayload
 from api.models.responses import (
     MessageResponse,
     UserListItem,
@@ -20,31 +25,13 @@ from api.models.responses import (
     UsersListResponse,
     UsersRecentListResponse,
 )
-from api.models.requests import UpdateUserPayload
 from api.models.rows import UserListRow
 from api.services.file_operations import upload_profile_picture
 from api.services.user_service import get_user_profile, update_user_profile
-from api.auth import auth
-from api.lib.database import PSQLDatabase
 
 router = APIRouter(
     prefix="/users", tags=["users"], responses={404: {"description": "Not found"}}
 )
-
-
-class RequireRole:
-    def __init__(self, minimum_role: int):
-        self.minimum_role = minimum_role
-
-    async def __call__(
-        self, payload: TokenPayload = Depends(auth.access_token_required)
-    ):
-        extra = payload.model_extra or {}
-        log.info(extra)
-        ruolo = extra.get("ruolo", 0)
-        if int(ruolo) < self.minimum_role:
-            raise HTTPException(status_code=403, detail="Permessi insufficienti")
-        return payload
 
 
 @router.get("/me", response_model=UserProfileOut)
@@ -55,6 +42,8 @@ async def get_profile(
     if not profile:
         raise HTTPException(status_code=404, detail="Utente non trovato")
 
+    permissions = fetch_user_permissions(profile.id)
+
     return UserProfileOut(
         id=profile.id,
         username=profile.username,
@@ -62,7 +51,9 @@ async def get_profile(
         nome=profile.nome,
         cognome=profile.cognome,
         istituto=profile.istituto,
-        ruolo=profile.ruolo,
+        role_id=profile.role_id,
+        role_name=profile.role_name,
+        permissions=permissions,
         bio=profile.bio,
         profile_picture=profile.profile_picture,
         last_login=profile.last_login,
@@ -102,7 +93,7 @@ async def update_profile(
         with PSQLDatabase() as db:
             cursor = db.get_cursor()
             cursor.execute(
-                "select profile_picture from utenti where id = %s",
+                "SELECT profile_picture FROM utenti WHERE id = %s",
                 (user_id,),
             )
             row = cursor.fetchone()
@@ -126,7 +117,7 @@ async def update_profile(
 @router.get(
     "/get-users",
     response_model=UsersListResponse,
-    dependencies=[Depends(RequireRole(3))],
+    dependencies=[Depends(require_permission("view_users"))],
 )
 async def get_users(
     offset: int = Query(default=0, ge=0), limit: int = Query(default=10, ge=1, le=100)
@@ -139,9 +130,10 @@ async def get_users(
 
         cursor.execute(
             """
-            SELECT id, nome, cognome, username, ruolo, istituto, email
-            FROM utenti
-            ORDER BY id
+            SELECT u.id, u.nome, u.cognome, u.username, u.role_id, r.name AS role_name, u.istituto, u.email
+            FROM utenti u
+            JOIN roles r ON u.role_id = r.id
+            ORDER BY u.id
             LIMIT %s OFFSET %s
             """,
             (limit, offset),
@@ -157,7 +149,8 @@ async def get_users(
             nome=user.nome,
             cognome=user.cognome,
             username=user.username,
-            ruolo=user.ruolo,
+            role_id=user.role_id,
+            role_name=user.role_name,
             istituto=user.istituto,
             email=user.email,
         )
@@ -169,21 +162,19 @@ async def get_users(
 @router.get(
     "/recent",
     response_model=UsersRecentListResponse,
-    dependencies=[Depends(RequireRole(3))],
+    dependencies=[Depends(require_permission("view_users"))],
 )
 async def get_recent_users(
     limit: int = Query(default=5, ge=1, le=100),
 ) -> UsersRecentListResponse | MessageResponse:
-    """Return the most recent users by taking the highest id values.
-    Protected to role >= 3 to match existing users listing.
-    """
     with PSQLDatabase() as db:
         cursor = db.get_cursor()
         cursor.execute(
             """
-            SELECT id, nome, cognome, username, ruolo, istituto, email
-            FROM utenti
-            ORDER BY id DESC
+            SELECT u.id, u.nome, u.cognome, u.username, u.role_id, r.name AS role_name, u.istituto, u.email
+            FROM utenti u
+            JOIN roles r ON u.role_id = r.id
+            ORDER BY u.id DESC
             LIMIT %s
             """,
             (limit,),
@@ -199,7 +190,8 @@ async def get_recent_users(
             nome=user.nome,
             cognome=user.cognome,
             username=user.username,
-            ruolo=user.ruolo,
+            role_id=user.role_id,
+            role_name=user.role_name,
             istituto=user.istituto,
             email=user.email,
         )
@@ -214,51 +206,90 @@ async def update_user(
     request: Request,
     payload: TokenPayload = Depends(auth.access_token_required),
 ):
-    current_role = int((payload.model_extra or {}).get("ruolo", 0))
+    extra = payload.model_extra or {}
     current_user_id = int(payload.sub)
+    current_role_id = int(extra.get("role_id", 0))
+
+    # Fetch the target user and also get role positions for hierarchy
+    with PSQLDatabase() as db:
+        cursor = db.get_cursor()
+
+        # Get current user's role position (lower = higher rank)
+        cursor.execute(
+            "SELECT position FROM roles WHERE id = %s",
+            (current_role_id,),
+        )
+        cur_pos_row = cursor.fetchone()
+        if not cur_pos_row:
+            raise HTTPException(status_code=403, detail="Ruolo non trovato")
+        current_position = cur_pos_row[0]
+
+        # Get target user info
+        cursor.execute(
+            """
+            SELECT u.id, u.role_id, r.position AS role_position, r.name AS role_name
+            FROM utenti u
+            JOIN roles r ON u.role_id = r.id
+            WHERE u.id = %s
+            """,
+            (user_id,),
+        )
+        target = cursor.fetchone()
+
+    if not target:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+
+    target_id, target_role_id, target_position, target_role_name = target
 
     body = await request.json()
     user_data_raw: dict = body.get("user_data", {}) if isinstance(body, dict) else {}
     user_data = UpdateUserPayload.model_validate(user_data_raw)
 
-    # Fetch the target user's current role
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
-            "SELECT ruolo FROM utenti WHERE id = %s",
-            (user_id,),
-        )
-        result = cursor.fetchone()
-
-    if not result:
-        raise HTTPException(status_code=404, detail="Utente non trovato")
-
-    target_role = result[0]
-
-    if user_id == current_user_id and user_data.ruolo is not None:
+    # Can't modify yourself
+    if user_id == current_user_id:
         raise HTTPException(
             status_code=403,
-            detail="Non puoi modificare il tuo stesso ruolo",
+            detail="Non puoi modificare il tuo stesso account da questa endpoint",
         )
 
-    if target_role >= current_role:
+    # Hierarchy check: can't modify users with same/higher rank
+    # Lower position number = higher rank (admin=1, utente=3)
+    if target_position <= current_position:
         raise HTTPException(
             status_code=403,
             detail="Non puoi modificare utenti con ruolo uguale o superiore al tuo",
         )
 
-    if user_data.ruolo is not None and int(user_data.ruolo) >= current_role:
-        raise HTTPException(
-            status_code=403,
-            detail="Non puoi assegnare un ruolo uguale o superiore al tuo",
-        )
+    # If changing role, validate new role is lower rank than current user
+    if user_data.ruolo is not None:
+        new_role_id = int(user_data.ruolo)
+        with PSQLDatabase() as db:
+            cursor = db.get_cursor()
+            cursor.execute(
+                "SELECT position FROM roles WHERE id = %s",
+                (new_role_id,),
+            )
+            new_pos_row = cursor.fetchone()
+            if not new_pos_row:
+                raise HTTPException(
+                    status_code=400, detail="Ruolo non valido"
+                )
+            new_position = new_pos_row[0]
+
+            if new_position <= current_position:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Non puoi assegnare un ruolo uguale o superiore al tuo",
+                )
 
     allowed_fields = {"nome", "cognome", "username", "ruolo", "email"}
     update_fields = []
     values = []
     for key, value in user_data.model_dump(exclude_unset=True).items():
         if key in allowed_fields:
-            update_fields.append(f"{key} = %s")
+            # Map frontend 'ruolo' (role_id int) to DB column 'role_id'
+            db_key = "role_id" if key == "ruolo" else key
+            update_fields.append(f"{db_key} = %s")
             values.append(value)
 
     if not update_fields:
@@ -275,10 +306,5 @@ async def update_user(
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Utente non trovato")
         db.commit()
-
-    # TODO NOTE: with JWT there is no live token store to update.
-    # Role changes take effect the next time the user logs in
-    # (or when their current token expires). This is the standard JWT trade-off.
-    # A token blocklist feature in authx-extra should be added later on.
 
     return MessageResponse(message="Utente aggiornato con successo")

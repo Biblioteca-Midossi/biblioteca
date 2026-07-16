@@ -10,7 +10,7 @@ import psycopg
 
 from typing import Annotated
 
-from api.routes.users import RequireRole
+from api.auth.helpers import require_permission
 from api.services.db_operations import insert_book_into_database
 from api.services.file_operations import convert_to_png
 from api.lib.database import PSQLDatabase
@@ -32,7 +32,7 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=BooksListResponse)
+@router.get("/", response_model=BooksListResponse)
 async def get_books(
     page: int = Query(1, alias="page"),
     limit: int = Query(12, alias="limit"),
@@ -91,7 +91,7 @@ async def get_books(
         raw_books = db.fetchall_as(BookListRow)
 
     if not raw_books:
-        raise HTTPException(204, "Books not found")
+        raise HTTPException(status_code=204, detail="Books not found")
 
     books = [
         BookResponse(
@@ -224,7 +224,7 @@ async def get_book(book_id: int = Path(...)) -> BookDetailResponse:
     )
 
 
-@router.post("", dependencies=[Depends(RequireRole(3))])
+@router.post("/", dependencies=[Depends(require_permission("create_book"))])
 async def create_book(data: Request, thumbnail: UploadFile | None = File(None)):
     try:
         form_data = await data.form()
@@ -248,7 +248,7 @@ async def create_book(data: Request, thumbnail: UploadFile | None = File(None)):
 
 
 @router.put(
-    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))]
+    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(require_permission("edit_book"))]
 )
 async def update_book(
     updated_book: Request,
@@ -426,7 +426,7 @@ async def update_book(
 
 
 @router.delete(
-    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(RequireRole(3))]
+    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(require_permission("delete_book"))]
 )
 async def delete_book(book_id: int = Path(...)):
     try:

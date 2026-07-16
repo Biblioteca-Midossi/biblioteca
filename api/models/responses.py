@@ -68,7 +68,9 @@ class UserProfileOut(BaseModel):
     nome: str
     cognome: str
     istituto: Istituto | None = None
-    ruolo: int
+    role_id: int
+    role_name: str = ""
+    permissions: list[str] = []
     bio: Optional[str] = None
     profile_picture: Optional[str] = None
     last_login: Optional[datetime] = None
@@ -81,7 +83,8 @@ class UserListItem(BaseModel):
     nome: str
     cognome: str
     username: str
-    ruolo: int
+    role_id: int
+    role_name: str = ""
     istituto: Istituto | None = None
     email: str
 

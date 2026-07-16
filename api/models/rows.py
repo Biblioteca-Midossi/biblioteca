@@ -74,7 +74,8 @@ class UserListRow(BaseModel):
     nome: str
     cognome: str
     username: str
-    ruolo: int
+    role_id: int
+    role_name: str = ""
     istituto: Istituto | None = None
     email: str
 
@@ -86,7 +87,8 @@ class UserLoginRow(BaseModel):
 
     id: int
     password: str
-    ruolo: int
+    role_id: int
+    role_name: str = ""
     istituto: Istituto | None = None
     username: str
 
@@ -100,7 +102,8 @@ class UserProfileRow(BaseModel):
     cognome: str
     nome: str
     istituto: Istituto | None = None
-    ruolo: int
+    role_id: int
+    role_name: str = ""
     password: str
     username: str
     email: str
@@ -109,15 +112,16 @@ class UserProfileRow(BaseModel):
     last_login: datetime | None = None
     preferred_language: str | None = None
     notification_settings: dict | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
 
 class UserBasicRow(BaseModel):
-    """Minimal row shape for id/istituto/ruolo lookups."""
+    """Minimal row shape for id/istituto/role_id lookups."""
 
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
     username: str
     istituto: Istituto | None = None
-    ruolo: int
+    role_id: int
+    role_name: str = ""

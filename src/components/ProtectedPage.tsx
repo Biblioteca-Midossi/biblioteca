@@ -5,33 +5,38 @@ import { useAuth } from '@local/hooks/authContext'
 import type { ReactElement } from 'react'
 
 interface ProtectedPageProps {
-  levelOfProtection: number
+  /** User needs at least one of these permissions (OR). */
+  permissions?: string[]
+  /** Require authentication (any user). */
+  requireAuth?: boolean
   children: ReactElement
 }
 
-export function ProtectedPage({ levelOfProtection, children }: ProtectedPageProps) {
+export function ProtectedPage({
+  permissions,
+  requireAuth = true,
+  children,
+}: ProtectedPageProps) {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (loading) return
 
-    if (!user) {
+    if (!user && requireAuth) {
       navigate({ to: '/login' })
       return
     }
 
-    if (user.ruolo < levelOfProtection) {
-      navigate({ to: '/' })
-      return
+    if (user && permissions && permissions.length > 0) {
+      const hasAny = permissions.some(p => user.permissions.includes(p))
+      if (!hasAny) {
+        navigate({ to: '/' })
+      }
     }
-  }, [user, loading, levelOfProtection, navigate])
+  }, [user, loading, permissions, requireAuth, navigate])
 
   if (loading) return <LoadingScreen />
-
-  if (!user || user.ruolo < levelOfProtection) {
-    return <LoadingScreen />
-  }
-
+  if (requireAuth && !user) return <LoadingScreen />
   return children
 }

@@ -20,14 +20,7 @@ export function useAuth(): AuthState {
   })
 }
 
-export function isAdmin(user: User | null) {
-  return (user?.ruolo ?? 0) >= 3
-}
-
-export function isBibliotecario(user: User | null) {
-  return (user?.ruolo ?? 0) >= 2
-}
-
-export function isLoggedIn(user: User | null) {
-  return user !== null
+/** Check if user has a specific named permission. */
+export function hasPermission(user: User | null, permission: string): boolean {
+  return user?.permissions?.includes(permission) ?? false
 }

@@ -36,7 +36,7 @@ export function CustomDrawer({ opened, onClose }: CustomDrawerProps) {
           </Text>
         </UnstyledButton>
         <Divider />
-        {user && user.ruolo >= 3 && (
+        {user?.permissions.includes('view_dashboard') && (
           <UnstyledButton
             p="sm"
             onClick={() => {

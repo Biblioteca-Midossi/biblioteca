@@ -4,23 +4,32 @@ export interface User {
   nome: string
   cognome: string
   email: string
-  ruolo: number           // 0 = utente, 3+ = admin (integer, as in DB)
-  id_istituto: IstitutoEnum     // istituto_enum: 'EXT' | 'ITT' | 'LAC' | 'LAV'
-  profile_picture: string | null
+  roleId: number
+  roleName: string
+  permissions: string[]
+  istituto: IstitutoEnum
+  profilePicture: string | null
   bio: string | null
-  preferred_language: string | null
-  notification_settings: Record<string, unknown> | null
-}
-
-export enum UserRole {
-  User = 1,
-  Moderator = 3,
-  Admin = 4,
+  preferredLanguage: string | null
+  notificationSettings: Record<string, unknown> | null
 }
 
 export enum IstitutoEnum {
-  EXT = 0,
-  ITT = 1,
-  LAC = 2,
-  LAV = 3
+  EXT = 'EXT',
+  ITT = 'ITT',
+  LAC = 'LAC',
+  LAV = 'LAV',
 }
+
+/** Known permission names used in the app. */
+export const Permissions = {
+  viewBooks: 'view_books',
+  createBook: 'create_book',
+  editBook: 'edit_book',
+  deleteBook: 'delete_book',
+  viewUsers: 'view_users',
+  editUser: 'edit_user',
+  viewDashboard: 'view_dashboard',
+  viewRoles: 'view_roles',
+  manageRoles: 'manage_roles',
+} as const

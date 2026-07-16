@@ -25,7 +25,7 @@ import type { User } from '@local/types/user'
 
 export const Route = createFileRoute('/dashboard')({
   component: () => (
-    <ProtectedPage levelOfProtection={3}>
+    <ProtectedPage permissions={['view_dashboard']}>
       <Dashboard />
     </ProtectedPage>
   ),
@@ -83,7 +83,7 @@ function Dashboard() {
         </SimpleGrid>
 
         <Box mb="xl">
-          <Group align="center">
+          <Group align="center" mb="xs">
             <Title order={4} fw={600}>Recently Added Books</Title>
             <Button leftSection={<IconPlus size={16} />} onClick={openBookAddModal}>
               New Book
