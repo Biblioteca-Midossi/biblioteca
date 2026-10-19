@@ -1,6 +1,6 @@
+import { useAuth } from '@local/hooks/authContext'
 import { Divider, Drawer, Stack, Text, UnstyledButton } from '@mantine/core'
 import { useLocation, useNavigate } from '@tanstack/react-router'
-import { useAuth } from '@local/hooks/authContext'
 
 interface CustomDrawerProps {
   opened: boolean
@@ -29,11 +29,7 @@ export function CustomDrawer({ opened, onClose }: CustomDrawerProps) {
             navigate({ to: '/' })
           }}
         >
-          <Text>
-            {pathname.endsWith('/')
-              ? 'Home'
-              : 'Torna alla Home'}
-          </Text>
+          <Text>{pathname.endsWith('/') ? 'Home' : 'Torna alla Home'}</Text>
         </UnstyledButton>
         <Divider />
         {user?.permissions.includes('view_dashboard') && (

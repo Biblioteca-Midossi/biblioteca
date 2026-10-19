@@ -1,9 +1,9 @@
-import { Box, Button, Group, Image, SimpleGrid, TextInput } from '@mantine/core'
-import { modals } from '@mantine/modals'
-import { useForm } from '@mantine/form'
-import { useEffect } from 'react'
-import type { ChangeEvent } from 'react'
 import type { Book } from '@local/types/book'
+import { Box, Button, Group, Image, SimpleGrid, TextInput } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { modals } from '@mantine/modals'
+import type { ChangeEvent } from 'react'
+import { useEffect } from 'react'
 
 export interface EditBookFormValues {
   titolo: string
@@ -75,8 +75,14 @@ function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentPro
     <form onSubmit={form.onSubmit(onSubmit)}>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" mt="sm">
         <TextInput label="Titolo" {...form.getInputProps('titolo')} />
-        <TextInput label="Nome Autore (separato da virgole)" {...form.getInputProps('nomeAutore')} />
-        <TextInput label="Cognome Autore (separato da virgole)" {...form.getInputProps('cognomeAutore')} />
+        <TextInput
+          label="Nome Autore (separato da virgole)"
+          {...form.getInputProps('nomeAutore')}
+        />
+        <TextInput
+          label="Cognome Autore (separato da virgole)"
+          {...form.getInputProps('cognomeAutore')}
+        />
         <TextInput label="ISBN" {...form.getInputProps('isbn')} />
         <TextInput label="Genere (separato da virgole)" {...form.getInputProps('genere')} />
         <TextInput label="Quantità" type="number" {...form.getInputProps('quantita')} />
@@ -94,18 +100,25 @@ function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentPro
         )}
       </Box>
       <Group justify="flex-end" mt="md">
-        <Button onClick={onClose} variant="default">Annulla</Button>
+        <Button onClick={onClose} variant="default">
+          Annulla
+        </Button>
         <Button type="submit">Salva Modifiche</Button>
       </Group>
     </form>
   )
 }
 
-export function openBookEditModal(book: Partial<Book> | null, onSubmit: (values: EditBookFormValues) => Promise<void>) {
+export function openBookEditModal(
+  book: Partial<Book> | null,
+  onSubmit: (values: EditBookFormValues) => Promise<void>
+) {
   const modalId = modals.open({
     title: 'Modifica Libro',
     size: 'lg',
     centered: true,
-    children: <BookEditFormContent book={book} onSubmit={onSubmit} onClose={() => modals.close(modalId)} />,
+    children: (
+      <BookEditFormContent book={book} onSubmit={onSubmit} onClose={() => modals.close(modalId)} />
+    ),
   })
 }

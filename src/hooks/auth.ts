@@ -1,13 +1,14 @@
 import { api } from '@local/hooks/api'
 import { notifications } from '@mantine/notifications'
+import axios from 'axios'
 
 interface RegisterProps {
-  nome: string,
-  cognome: string,
-  username: string,
-  email: string,
-  password: string,
-  istituto: string | number,
+  nome: string
+  cognome: string
+  username: string
+  email: string
+  password: string
+  istituto: string | number
 }
 
 export async function register(newUser: RegisterProps): Promise<string> {
@@ -30,15 +31,13 @@ export async function register(newUser: RegisterProps): Promise<string> {
     })
 
     return 'register-error'
-
-  } catch (error: any) {
-    const message =
-      error?.response?.data?.detail ??
-      'Errore imprevisto durante la registrazione'
-
+  } catch (error) {
+    const message = axios.isAxiosError(error)
+      ? (error.response?.data as { detail?: string } | undefined)?.detail
+      : undefined
     notifications.show({
       title: 'Errore di registrazione',
-      message,
+      message: message ?? 'Errore imprevisto durante la registrazione',
       color: 'red',
     })
 

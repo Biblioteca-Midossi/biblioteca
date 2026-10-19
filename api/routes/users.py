@@ -1,21 +1,18 @@
-from typing import Optional
-
 from authx import TokenPayload
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
-    UploadFile,
     File,
     Form,
+    HTTPException,
     Query,
     Request,
+    UploadFile,
 )
 
 from api.auth import auth
 from api.auth.helpers import fetch_user_permissions, require_permission
 from api.lib.database import PSQLDatabase
-from api.lib.logger import log
 from api.models.auth import UserProfileUpdate
 from api.models.requests import UpdateUserPayload
 from api.models.responses import (
@@ -29,9 +26,7 @@ from api.models.rows import UserListRow
 from api.services.file_operations import upload_profile_picture
 from api.services.user_service import get_user_profile, update_user_profile
 
-router = APIRouter(
-    prefix="/users", tags=["users"], responses={404: {"description": "Not found"}}
-)
+router = APIRouter(prefix="/users", tags=["users"], responses={404: {"description": "Not found"}})
 
 
 @router.get("/me", response_model=UserProfileOut)
@@ -63,8 +58,8 @@ async def get_profile(
 @router.put("/me", response_model=MessageResponse)
 async def update_profile(
     payload: TokenPayload = Depends(auth.access_token_required),
-    profile_update: Optional[UserProfileUpdate] = Form(None),
-    file: Optional[UploadFile] = File(None),
+    profile_update: UserProfileUpdate | None = Form(None),
+    file: UploadFile | None = File(None),
 ):
     user_id = int(payload.sub)
     update_data = {}
@@ -83,9 +78,7 @@ async def update_profile(
             )
 
         if file.size > 5_000_000:  # 5MB
-            raise HTTPException(
-                status_code=400, detail="Il file non può superare i 5MB"
-            )
+            raise HTTPException(status_code=400, detail="Il file non può superare i 5MB")
 
         # Upload new file picture
         await upload_profile_picture(user_id, file)
@@ -239,7 +232,7 @@ async def update_user(
     if not target:
         raise HTTPException(status_code=404, detail="Utente non trovato")
 
-    target_id, target_role_id, target_position, target_role_name = target
+    _target_id, _target_role_id, target_position, _target_role_name = target
 
     body = await request.json()
     user_data_raw: dict = body.get("user_data", {}) if isinstance(body, dict) else {}
@@ -271,9 +264,7 @@ async def update_user(
             )
             new_pos_row = cursor.fetchone()
             if not new_pos_row:
-                raise HTTPException(
-                    status_code=400, detail="Ruolo non valido"
-                )
+                raise HTTPException(status_code=400, detail="Ruolo non valido")
             new_position = new_pos_row[0]
 
             if new_position <= current_position:

@@ -1,11 +1,11 @@
-import { Divider } from '@mantine/core'
-import { useEffect, useState } from 'react'
-import useBookStore from '@local/hooks/useBookStore'
-import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
-import { getResponsiveCols } from '@local/styles/bookGridStyles'
 import { BookCard } from '@local/components/BookGrid/BookCard'
 import { BookGrid } from '@local/components/BookGrid/BookGrid'
+import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
+import useBookStore from '@local/hooks/useBookStore'
+import { getResponsiveCols } from '@local/styles/bookGridStyles'
 import type { Book } from '@local/types/book'
+import { Divider } from '@mantine/core'
+import { useEffect, useState } from 'react'
 
 export function BookGridBase() {
   const currentBreakpoint = getBreakpoints()
@@ -26,9 +26,7 @@ export function BookGridBase() {
     setPage(1)
   }
 
-  const filteredBooks = books instanceof Array
-    ? [...books].sort((a, b) => a.id - b.id)
-    : books
+  const filteredBooks = Array.isArray(books) ? [...books].sort((a, b) => a.id - b.id) : books
 
   return (
     <>
@@ -38,11 +36,9 @@ export function BookGridBase() {
         page={page}
         onPageChange={setPage}
         onSearch={handleSearch}
-        renderBookCard={(book: Partial<Book>) => (
-          <BookCard book={book} />
-        )}
+        renderBookCard={(book: Partial<Book>) => <BookCard book={book} />}
       />
-      <Divider className="w-4/5 m-auto"/>
+      <Divider className="w-4/5 m-auto" />
     </>
   )
 }

@@ -1,0 +1,1107 @@
+openapi: 3.1.0
+info:
+  title: FastAPI
+  version: 0.1.0
+servers:
+- url: /api
+paths:
+  /auth/register:
+    post:
+      operationId: register_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Register
+      tags:
+      - auth
+  /auth/login:
+    post:
+      operationId: login_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Login
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      operationId: refresh_auth_refresh_post
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+      summary: Refresh
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      operationId: logout_auth_logout_post
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+      summary: Logout
+      tags:
+      - auth
+  /books/:
+    get:
+      operationId: get_books_books__get
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          title: Page
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 12
+          title: Limit
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          nullable: true
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BooksListResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Get Books
+      tags:
+      - books
+    post:
+      operationId: create_book_books__post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_create_book_books__post"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Create Book
+      tags:
+      - books
+  /books/recent:
+    get:
+      description: |-
+        Return the most recently added books by picking the highest id_libro values.
+        The result is ordered by id_libro desc and limited by `limit`.
+      operationId: get_recent_books_books_recent_get
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 5
+          maximum: 50
+          minimum: 1
+          title: Limit
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecentBooksListResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Get Recent Books
+      tags:
+      - books
+  /books/{book_id}:
+    delete:
+      operationId: delete_book_books__book_id__delete
+      parameters:
+      - explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          title: Book Id
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Delete Book
+      tags:
+      - books
+    get:
+      operationId: get_book_books__book_id__get
+      parameters:
+      - explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          title: Book Id
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      summary: Get Book
+      tags:
+      - books
+    put:
+      operationId: update_book_books__book_id__put
+      parameters:
+      - explode: false
+        in: path
+        name: book_id
+        required: true
+        schema:
+          title: Book Id
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_update_book_books__book_id__put"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Update Book
+      tags:
+      - books
+  /roles/:
+    get:
+      description: List all roles with their permissions. Requires view_users permission.
+      operationId: list_roles_roles__get
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/RoleOut"
+                title: Response List Roles Roles  Get
+                type: array
+                default: null
+          description: Successful Response
+        "404":
+          description: Not found
+      security:
+      - AuthXAccessCookie: []
+      summary: List Roles
+      tags:
+      - roles
+  /users/me:
+    get:
+      operationId: get_profile_users_me_get
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileOut"
+          description: Successful Response
+        "404":
+          description: Not found
+      security:
+      - AuthXAccessCookie: []
+      summary: Get Profile
+      tags:
+      - users
+    put:
+      operationId: update_profile_users_me_put
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/Body_update_profile_users_me_put"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Update Profile
+      tags:
+      - users
+  /users/get-users:
+    get:
+      operationId: get_users_users_get_users_get
+      parameters:
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          title: Offset
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 10
+          maximum: 100
+          minimum: 1
+          title: Limit
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersListResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Get Users
+      tags:
+      - users
+  /users/recent:
+    get:
+      operationId: get_recent_users_users_recent_get
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 5
+          maximum: 100
+          minimum: 1
+          title: Limit
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersRecentListResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Get Recent Users
+      tags:
+      - users
+  /users/update-user/{user_id}:
+    put:
+      operationId: update_user_users_update_user__user_id__put
+      parameters:
+      - explode: false
+        in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Successful Response
+        "404":
+          description: Not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+          description: Validation Error
+      security:
+      - AuthXAccessCookie: []
+      summary: Update User
+      tags:
+      - users
+components:
+  schemas:
+    Body_create_book_books__post:
+      properties:
+        thumbnail:
+          format: binary
+          nullable: true
+          type: string
+      title: Body_create_book_books__post
+    Body_update_book_books__book_id__put:
+      properties:
+        file:
+          format: binary
+          nullable: true
+          type: string
+      title: Body_update_book_books__book_id__put
+    Body_update_profile_users_me_put:
+      properties:
+        profile_update:
+          allOf:
+          - $ref: "#/components/schemas/UserProfileUpdate"
+          nullable: true
+        file:
+          format: binary
+          nullable: true
+          type: string
+      title: Body_update_profile_users_me_put
+    BookDetailResponse:
+      example:
+        book:
+          id: 0
+          titolo: titolo
+          autori:
+          - autori
+          - autori
+          coverUrl: coverUrl
+          isbn: isbn
+          genere:
+          - genere
+          - genere
+          quantita: 6
+          casaEditrice: casaEditrice
+          descrizione: descrizione
+          istituto: ""
+          scaffale: scaffale
+      properties:
+        book:
+          $ref: "#/components/schemas/BookResponse"
+      required:
+      - book
+      title: BookDetailResponse
+    BookResponse:
+      example:
+        id: 0
+        titolo: titolo
+        autori:
+        - autori
+        - autori
+        coverUrl: coverUrl
+        isbn: isbn
+        genere:
+        - genere
+        - genere
+        quantita: 6
+        casaEditrice: casaEditrice
+        descrizione: descrizione
+        istituto: ""
+        scaffale: scaffale
+      properties:
+        id:
+          title: Id
+          type: integer
+        titolo:
+          title: Titolo
+          type: string
+        autori:
+          items:
+            type: string
+          title: Autori
+          type: array
+          default: null
+        coverUrl:
+          nullable: true
+          title: coverUrl
+          type: string
+        isbn:
+          nullable: true
+          title: isbn
+          type: string
+        genere:
+          default: []
+          items:
+            type: string
+          title: Genere
+          type: array
+        quantita:
+          title: Quantita
+          type: integer
+        casaEditrice:
+          nullable: true
+          title: casaEditrice
+          type: string
+        descrizione:
+          nullable: true
+          title: descrizione
+          type: string
+        istituto:
+          allOf:
+          - $ref: "#/components/schemas/Istituto"
+          nullable: true
+          title: istituto
+        scaffale:
+          nullable: true
+          title: scaffale
+          type: string
+      required:
+      - autori
+      - id
+      - quantita
+      - titolo
+      title: BookResponse
+    BooksListResponse:
+      example:
+        books:
+        - id: 0
+          titolo: titolo
+          autori:
+          - autori
+          - autori
+          coverUrl: coverUrl
+          isbn: isbn
+          genere:
+          - genere
+          - genere
+          quantita: 6
+          casaEditrice: casaEditrice
+          descrizione: descrizione
+          istituto: ""
+          scaffale: scaffale
+        - id: 0
+          titolo: titolo
+          autori:
+          - autori
+          - autori
+          coverUrl: coverUrl
+          isbn: isbn
+          genere:
+          - genere
+          - genere
+          quantita: 6
+          casaEditrice: casaEditrice
+          descrizione: descrizione
+          istituto: ""
+          scaffale: scaffale
+        maxpage: 1
+      properties:
+        books:
+          items:
+            $ref: "#/components/schemas/BookResponse"
+          title: Books
+          type: array
+          default: null
+        maxpage:
+          title: Maxpage
+          type: integer
+      required:
+      - books
+      - maxpage
+      title: BooksListResponse
+    HTTPValidationError:
+      example:
+        detail:
+        - loc:
+          - Location_inner
+          - Location_inner
+          msg: msg
+          type: type
+          input: ""
+          ctx: "{}"
+        - loc:
+          - Location_inner
+          - Location_inner
+          msg: msg
+          type: type
+          input: ""
+          ctx: "{}"
+      properties:
+        detail:
+          items:
+            $ref: "#/components/schemas/ValidationError"
+          title: Detail
+          type: array
+          default: null
+      title: HTTPValidationError
+    Istituto:
+      enum:
+      - EXT
+      - ITT
+      - LAC
+      - LAV
+      title: Istituto
+      type: string
+    LoginRequest:
+      example:
+        login: login
+        password: password
+      properties:
+        login:
+          title: Login
+          type: string
+        password:
+          title: Password
+          type: string
+      required:
+      - login
+      - password
+      title: LoginRequest
+    MessageResponse:
+      example:
+        message: message
+      properties:
+        message:
+          title: Message
+          type: string
+      required:
+      - message
+      title: MessageResponse
+    RecentBookResponse:
+      example:
+        id: 0
+        titolo: titolo
+        autori:
+        - autori
+        - autori
+        coverUrl: coverUrl
+        isbn: isbn
+        quantita: 6
+        casaEditrice: casaEditrice
+      properties:
+        id:
+          title: Id
+          type: integer
+        titolo:
+          title: Titolo
+          type: string
+        autori:
+          items:
+            type: string
+          nullable: true
+          title: autori
+          type: array
+          default: null
+        coverUrl:
+          nullable: true
+          title: coverUrl
+          type: string
+        isbn:
+          nullable: true
+          title: isbn
+          type: string
+        quantita:
+          nullable: true
+          title: quantita
+          type: integer
+        casaEditrice:
+          nullable: true
+          title: casaEditrice
+          type: string
+      required:
+      - id
+      - titolo
+      title: RecentBookResponse
+    RecentBooksListResponse:
+      example:
+        books:
+        - id: 0
+          titolo: titolo
+          autori:
+          - autori
+          - autori
+          coverUrl: coverUrl
+          isbn: isbn
+          quantita: 6
+          casaEditrice: casaEditrice
+        - id: 0
+          titolo: titolo
+          autori:
+          - autori
+          - autori
+          coverUrl: coverUrl
+          isbn: isbn
+          quantita: 6
+          casaEditrice: casaEditrice
+      properties:
+        books:
+          items:
+            $ref: "#/components/schemas/RecentBookResponse"
+          title: Books
+          type: array
+          default: null
+      required:
+      - books
+      title: RecentBooksListResponse
+    RegisterRequest:
+      example:
+        nome: nome
+        cognome: cognome
+        username: username
+        email: email
+        password: password
+        istituto: EXT
+      properties:
+        nome:
+          title: Nome
+          type: string
+        cognome:
+          title: Cognome
+          type: string
+        username:
+          title: Username
+          type: string
+        email:
+          format: email
+          title: Email
+          type: string
+        password:
+          title: Password
+          type: string
+        istituto:
+          $ref: "#/components/schemas/Istituto"
+      required:
+      - cognome
+      - email
+      - istituto
+      - nome
+      - password
+      - username
+      title: RegisterRequest
+    RoleOut:
+      example:
+        id: 0
+        name: name
+        display_name: display_name
+        position: 6
+        color: color
+        permissions:
+        - permissions
+        - permissions
+      properties:
+        id:
+          title: Id
+          type: integer
+        name:
+          title: Name
+          type: string
+        display_name:
+          title: Display Name
+          type: string
+        position:
+          title: Position
+          type: integer
+        color:
+          title: Color
+          type: string
+        permissions:
+          default: []
+          items:
+            type: string
+          title: Permissions
+          type: array
+      required:
+      - color
+      - display_name
+      - id
+      - name
+      - position
+      title: RoleOut
+    UserListItem:
+      example:
+        id: 0
+        nome: nome
+        cognome: cognome
+        username: username
+        roleId: 6
+        roleName: ""
+        istituto: ""
+        email: email
+      properties:
+        id:
+          title: Id
+          type: integer
+        nome:
+          title: Nome
+          type: string
+        cognome:
+          title: Cognome
+          type: string
+        username:
+          title: Username
+          type: string
+        roleId:
+          title: Roleid
+          type: integer
+        roleName:
+          default: ""
+          title: Rolename
+          type: string
+        istituto:
+          allOf:
+          - $ref: "#/components/schemas/Istituto"
+          nullable: true
+          title: istituto
+        email:
+          title: Email
+          type: string
+      required:
+      - cognome
+      - email
+      - id
+      - nome
+      - roleId
+      - username
+      title: UserListItem
+    UserProfileOut:
+      example:
+        id: 0
+        username: username
+        email: email
+        nome: nome
+        cognome: cognome
+        istituto: ""
+        roleId: 6
+        roleName: ""
+        permissions:
+        - permissions
+        - permissions
+        bio: bio
+        profilePicture: profilePicture
+        lastLogin: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          title: Id
+          type: integer
+        username:
+          title: Username
+          type: string
+        email:
+          title: Email
+          type: string
+        nome:
+          title: Nome
+          type: string
+        cognome:
+          title: Cognome
+          type: string
+        istituto:
+          allOf:
+          - $ref: "#/components/schemas/Istituto"
+          nullable: true
+          title: istituto
+        roleId:
+          title: Roleid
+          type: integer
+        roleName:
+          default: ""
+          title: Rolename
+          type: string
+        permissions:
+          default: []
+          items:
+            type: string
+          title: Permissions
+          type: array
+        bio:
+          nullable: true
+          title: bio
+          type: string
+        profilePicture:
+          nullable: true
+          title: profilePicture
+          type: string
+        lastLogin:
+          format: date-time
+          nullable: true
+          title: lastLogin
+          type: string
+      required:
+      - cognome
+      - email
+      - id
+      - nome
+      - roleId
+      - username
+      title: UserProfileOut
+    UserProfileUpdate:
+      properties:
+        nome:
+          nullable: true
+          title: nome
+          type: string
+        cognome:
+          nullable: true
+          title: cognome
+          type: string
+        email:
+          format: email
+          nullable: true
+          title: email
+          type: string
+        bio:
+          nullable: true
+          title: bio
+          type: string
+        istituto:
+          allOf:
+          - $ref: "#/components/schemas/Istituto"
+          nullable: true
+          title: istituto
+      required:
+      - bio
+      - cognome
+      - email
+      - istituto
+      - nome
+      title: UserProfileUpdate
+    UsersListResponse:
+      example:
+        users:
+        - id: 0
+          nome: nome
+          cognome: cognome
+          username: username
+          roleId: 6
+          roleName: ""
+          istituto: ""
+          email: email
+        - id: 0
+          nome: nome
+          cognome: cognome
+          username: username
+          roleId: 6
+          roleName: ""
+          istituto: ""
+          email: email
+        total: 1
+      properties:
+        users:
+          items:
+            $ref: "#/components/schemas/UserListItem"
+          title: Users
+          type: array
+          default: null
+        total:
+          title: Total
+          type: integer
+      required:
+      - total
+      - users
+      title: UsersListResponse
+    UsersRecentListResponse:
+      example:
+        users:
+        - id: 0
+          nome: nome
+          cognome: cognome
+          username: username
+          roleId: 6
+          roleName: ""
+          istituto: ""
+          email: email
+        - id: 0
+          nome: nome
+          cognome: cognome
+          username: username
+          roleId: 6
+          roleName: ""
+          istituto: ""
+          email: email
+      properties:
+        users:
+          items:
+            $ref: "#/components/schemas/UserListItem"
+          title: Users
+          type: array
+          default: null
+      required:
+      - users
+      title: UsersRecentListResponse
+    ValidationError:
+      example:
+        loc:
+        - Location_inner
+        - Location_inner
+        msg: msg
+        type: type
+        input: ""
+        ctx: "{}"
+      properties:
+        loc:
+          items:
+            $ref: "#/components/schemas/Location_inner"
+          title: Location
+          type: array
+          default: null
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+        input:
+          title: Input
+        ctx:
+          title: Context
+          type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    Location_inner:
+      anyOf:
+      - type: string
+      - type: integer
+      title: Location_inner
+  securitySchemes:
+    AuthXAccessCookie:
+      description: Provide an AuthX access token in this cookie.
+      in: cookie
+      name: access_token
+      type: apiKey

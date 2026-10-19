@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
-from api.routes import register_routes
 from api.auth import auth
-
+from api.routes import register_routes
 
 biblioteca = FastAPI()
 

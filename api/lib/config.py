@@ -1,11 +1,9 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional
 
 from dotenv import load_dotenv
 
 from api.lib.logger import log
-
 
 log.info("Trying to load environment variables")
 if Path(".env").exists():
@@ -25,7 +23,7 @@ except Exception:
     log.error("Your .env is not complete. Try checking for missing fields")
     raise Exception("Your .env is not complete. Try checking for missing fields")
 
-psql_config: Dict[str, Optional[str]] = {
+psql_config: dict[str, str | None] = {
     "dbname": psql_database,
     "user": psql_user,
     "password": psql_password,

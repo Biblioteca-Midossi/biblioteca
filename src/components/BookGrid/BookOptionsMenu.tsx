@@ -8,11 +8,19 @@ interface BookOptionsMenuProps {
   onGoToPage: () => void
 }
 
-export function BookOptionsMenu({ anchorEl, onClose, onEdit, onDelete, onGoToPage }: BookOptionsMenuProps) {
+export function BookOptionsMenu({
+  anchorEl,
+  onClose,
+  onEdit,
+  onDelete,
+  onGoToPage,
+}: BookOptionsMenuProps) {
   return (
     <Menu
       opened={Boolean(anchorEl)}
-      onChange={(opened) => { if (!opened) onClose() }}
+      onChange={(opened) => {
+        if (!opened) onClose()
+      }}
       middlewares={{ flip: true, shift: true }}
     >
       <Menu.Target>

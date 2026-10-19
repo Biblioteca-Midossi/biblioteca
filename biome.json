@@ -63,6 +63,12 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/src/client/**/*", "!!**/routeTree.gen.ts", "!!**/biome.json", "!!**/public"]
+    "includes": [
+      "**/src/**/*",
+      "!!**/routeTree.gen.ts",
+      "!!**/src/api",
+      "!!**/biome.json",
+      "!!**/public"
+    ]
   }
 }

@@ -1,7 +1,7 @@
+import type { Book } from '@local/types/book'
 import { ActionIcon, Box, Card, Image, Text } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
-import type { Book } from '@local/types/book'
 import type { MouseEvent } from 'react'
 
 interface BookCardProps {
@@ -19,9 +19,10 @@ export function BookCard({ book, showId, onMenuOpen }: BookCardProps) {
       <Card.Section>
         <Image
           className="aspect-1/1.5 cursor-pointer"
-          src={typeof (book.coverUrl) === 'string'
-            ? `/api/${book.coverUrl}`
-            : `/api/uploads/thumbnails/.no-thumbnail-found.png`
+          src={
+            typeof book.coverUrl === 'string'
+              ? `/api/${book.coverUrl}`
+              : `/api/uploads/thumbnails/.no-thumbnail-found.png`
           }
           alt={book.titolo ?? 'Book cover'}
           draggable={false}
@@ -31,35 +32,20 @@ export function BookCard({ book, showId, onMenuOpen }: BookCardProps) {
         />
       </Card.Section>
       <Box p={0}>
-        <Text
-          size="sm"
-          fw={500}
-          truncate
-        >
+        <Text size="sm" fw={500} truncate>
           {book.titolo}
         </Text>
-        <Text
-          size="xs"
-          c="dimmed"
-          truncate
-        >
-          {book.autori ?? "Autore Sconosciuto"}
+        <Text size="xs" c="dimmed" truncate>
+          {book.autori ?? 'Autore Sconosciuto'}
         </Text>
         {showId && (
-          <Text
-            size="xs"
-            c="dimmed"
-            truncate
-          >
+          <Text size="xs" c="dimmed" truncate>
             {book.id}
           </Text>
         )}
         {onMenuOpen && (
           <Box className="w-full flex justify-end">
-            <ActionIcon
-              variant="subtle"
-              onClick={(e) => onMenuOpen(e, book)}
-            >
+            <ActionIcon variant="subtle" onClick={(e) => onMenuOpen(e, book)}>
               <IconDotsVertical size={16} />
             </ActionIcon>
           </Box>

@@ -1,8 +1,10 @@
 import io
 import os
-from PIL import Image
+
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+from PIL import Image
+
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
 

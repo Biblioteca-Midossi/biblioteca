@@ -1,7 +1,7 @@
-import { create } from 'zustand'
 import { api } from '@local/hooks/api'
-import { notifications } from '@mantine/notifications'
 import type { Book } from '@local/types/book'
+import { notifications } from '@mantine/notifications'
+import { create } from 'zustand'
 
 interface BookState {
   books: Array<Book> | string
@@ -10,15 +10,15 @@ interface BookState {
   isLoading: boolean
 
   // Actions
-  fetchBooks: (page: number, limit: number, searchQuery?: string) => Promise<void | string>
-  fetchSingleBook: (bookId: number) => Promise<void | string>
+  fetchBooks: (page: number, limit: number, searchQuery?: string) => Promise<undefined | string>
+  fetchSingleBook: (bookId: number) => Promise<undefined | string>
   addBook: (book: Partial<Book>) => Promise<boolean>
   editBook: (book: Partial<Book>) => Promise<boolean>
   deleteBook: (bookId: number) => Promise<void>
 }
 
 const useBookStore = create<BookState>((_set, _get) => {
-  return ({
+  return {
     books: [],
     singleBook: '',
     maxpage: 1,
@@ -37,13 +37,13 @@ const useBookStore = create<BookState>((_set, _get) => {
           const formattedBooks = response.data.books.map((book: Book) => ({
             ...book,
             autori: book.autori.join(', '),
-            coverUrl: `${book.coverUrl}`
+            coverUrl: `${book.coverUrl}`,
           }))
           _set({ books: formattedBooks, maxpage: response.data.maxpage })
         } else if (response.status === 204) {
-          _set({ books: "No books found! Is the database empty?" })
+          _set({ books: 'No books found! Is the database empty?' })
         } else {
-          _set({ books: "An error has occurred and no books were found! (Response is not 200 OK)" })
+          _set({ books: 'An error has occurred and no books were found! (Response is not 200 OK)' })
         }
       } catch (error) {
         console.error('Error fetching multiple books:', error)
@@ -53,7 +53,8 @@ const useBookStore = create<BookState>((_set, _get) => {
           color: 'red',
         })
         _set({
-          books: 'An error has occurred! Please report this (Axios get failed. Maybe the API is not accessible?)'
+          books:
+            'An error has occurred! Please report this (Axios get failed. Maybe the API is not accessible?)',
         })
       } finally {
         _set({ isLoading: false })
@@ -102,8 +103,8 @@ const useBookStore = create<BookState>((_set, _get) => {
       try {
         const response = await api.post('/books', formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         })
 
         if (response.status === 201) {
@@ -113,7 +114,6 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'green',
           })
           return true
-
         } else if (response.status === 400) {
           notifications.show({
             title: 'Errore client',
@@ -121,7 +121,6 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'red',
           })
           return false
-
         } else if (response.status === 500) {
           notifications.show({
             title: 'Errore server',
@@ -129,7 +128,6 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'red',
           })
           return false
-
         } else {
           notifications.show({
             title: 'Errore sconosciuto',
@@ -138,7 +136,7 @@ const useBookStore = create<BookState>((_set, _get) => {
           })
           return false
         }
-      } catch (error) {
+      } catch (_error) {
         notifications.show({
           title: 'Errore di rete',
           message: 'Impossibile connettersi al server',
@@ -150,11 +148,14 @@ const useBookStore = create<BookState>((_set, _get) => {
 
     editBook: async (updatedBook: Partial<Book>) => {
       const formData = new FormData()
-      formData.append('updatedBook', JSON.stringify({
-        ...updatedBook,
-        copertina: null,
-        coverUrl: null,
-      }))
+      formData.append(
+        'updatedBook',
+        JSON.stringify({
+          ...updatedBook,
+          copertina: null,
+          coverUrl: null,
+        })
+      )
 
       if (updatedBook.copertina) {
         formData.append('file', updatedBook.copertina)
@@ -163,25 +164,23 @@ const useBookStore = create<BookState>((_set, _get) => {
       try {
         const response = await api.put(`/books/${updatedBook.id}`, formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            'Content-Type': 'multipart/form-data',
+          },
         })
 
         if (response.status === 200) {
           _set((state: BookState) => {
-            if (!(state.books instanceof Array)) {
+            if (!Array.isArray(state.books)) {
               return state
             }
 
             const updatedBooks: Array<Book> = state.books.map((book: Book) =>
-              book.id === updatedBook.id
-                ? { ...book, ...updatedBook }
-                : book
+              book.id === updatedBook.id ? { ...book, ...updatedBook } : book
             )
 
             return {
               ...state,
-              books: updatedBooks
+              books: updatedBooks,
             }
           })
 
@@ -198,7 +197,6 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'red',
           })
           return false
-
         } else if (response.status === 500) {
           notifications.show({
             title: 'Errore server',
@@ -206,7 +204,6 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'red',
           })
           return false
-
         } else {
           notifications.show({
             title: 'Errore sconosciuto',
@@ -215,7 +212,7 @@ const useBookStore = create<BookState>((_set, _get) => {
           })
           return false
         }
-      } catch (error) {
+      } catch (_error) {
         notifications.show({
           title: 'Errore di rete',
           message: 'Impossibile connettersi al server',
@@ -230,12 +227,12 @@ const useBookStore = create<BookState>((_set, _get) => {
         const response = await api.delete(`/books/${bookId}`)
         if (response.status === 200) {
           _set((state: BookState) => {
-            if (!(state.books instanceof Array)) {
+            if (!Array.isArray(state.books)) {
               return state
             }
             return {
               ...state,
-              books: state.books.filter((book: Book) => book.id !== bookId)
+              books: state.books.filter((book: Book) => book.id !== bookId),
             }
           })
           notifications.show({
@@ -250,7 +247,7 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'red',
           })
         }
-      } catch (error) {
+      } catch (_error) {
         notifications.show({
           title: 'Errore di rete',
           message: 'Impossibile connettersi al server',
@@ -258,7 +255,7 @@ const useBookStore = create<BookState>((_set, _get) => {
         })
       }
     },
-  })
+  }
 })
 
 export default useBookStore

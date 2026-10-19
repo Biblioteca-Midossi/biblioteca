@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Box, Divider, Image, SimpleGrid, Text, Title } from '@mantine/core'
 import useBookStore from '@local/hooks/useBookStore'
+import { Box, Divider, Image, SimpleGrid, Text, Title } from '@mantine/core'
+import { createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 export const Route = createFileRoute('/books/$id')({
@@ -28,9 +28,10 @@ function BookPage() {
         >
           <Box className="text-center">
             <Image
-              src={typeof (singleBook.coverUrl) === 'string'
-                ? `/api/${singleBook.coverUrl}`
-                : `/api/uploads/thumbnails/.no-thumbnail-found.png`
+              src={
+                typeof singleBook.coverUrl === 'string'
+                  ? `/api/${singleBook.coverUrl}`
+                  : `/api/uploads/thumbnails/.no-thumbnail-found.png`
               }
               alt={`${singleBook.titolo}'s cover`}
               m="auto"
@@ -40,7 +41,9 @@ function BookPage() {
 
           <Box className="flex flex-col justify-start">
             <Title order={2}>{singleBook.titolo}</Title>
-            <Text size="lg" c="dimmed">by {singleBook.autori ?? "Autore Sconosciuto"}</Text>
+            <Text size="lg" c="dimmed">
+              by {singleBook.autori ?? 'Autore Sconosciuto'}
+            </Text>
             <Divider my="lg" />
             <Text>{singleBook.descrizione}</Text>
           </Box>

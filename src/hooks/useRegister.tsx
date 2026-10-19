@@ -1,10 +1,10 @@
-import { useNavigate } from "@tanstack/react-router"
-import { useEffect } from "react"
-import { useForm } from "@mantine/form"
-import { modals } from "@mantine/modals"
-import { Button, Group, Text } from "@mantine/core"
-import { register } from "@local/hooks/auth"
-import { useAuth } from "@local/hooks/authContext"
+import { register } from '@local/hooks/auth'
+import { useAuth } from '@local/hooks/authContext'
+import { Button, Group, Text } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { modals } from '@mantine/modals'
+import { useNavigate } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 export function useRegister() {
   const navigate = useNavigate()
@@ -20,7 +20,14 @@ export function useRegister() {
           <>
             <Text size="sm">Verrai reindirizzato alla home.</Text>
             <Group justify="flex-end" mt="md">
-              <Button onClick={() => { modals.closeAll(); navigate({ to: '/' }) }}>OK</Button>
+              <Button
+                onClick={() => {
+                  modals.closeAll()
+                  navigate({ to: '/' })
+                }}
+              >
+                OK
+              </Button>
             </Group>
           </>
         ),
@@ -35,17 +42,17 @@ export function useRegister() {
       username: '',
       email: '',
       password: '',
-      istituto: ''
+      istituto: '',
     },
   })
 
   const handleSubmit = form.onSubmit(async (values) => {
     try {
       const result = await register(values)
-      if (result.includes("successful-request")) {
+      if (result.includes('successful-request')) {
         navigate({ to: '/login' })
       }
-    } catch (error) {
+    } catch (_error) {
       /* handled by auth.ts notification */
     }
   })

@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from api.lib.config import psql_config
 from api.lib.logger import log
 
-
 M = TypeVar("M", bound=BaseModel)
 
 
@@ -38,9 +37,7 @@ class PSQLDatabase:
             if self.conn:
                 self.cursor = self.conn.cursor()
         except psycopg.Error as cursor_error:
-            log.error(
-                f"Error while getting the cursor from the connection: {cursor_error}"
-            )
+            log.error(f"Error while getting the cursor from the connection: {cursor_error}")
         return self.conn
 
     def close(self):
@@ -50,9 +47,7 @@ class PSQLDatabase:
             if self.conn:
                 psql_pool.putconn(self.conn)
         except psycopg.Error as close_error:
-            log.error(
-                f"Error while closing the cursor or the connection: {close_error}"
-            )
+            log.error(f"Error while closing the cursor or the connection: {close_error}")
 
     def commit(self):
         try:
@@ -67,9 +62,7 @@ class PSQLDatabase:
             if self.conn:
                 self.conn.rollback()
         except psycopg.Error as rollback_error:
-            log.error(
-                f"Error while committing changes to the database: {rollback_error}"
-            )
+            log.error(f"Error while committing changes to the database: {rollback_error}")
 
     def get_cursor(self):
         if self.cursor:
@@ -84,7 +77,7 @@ class PSQLDatabase:
             if not row or not desc:
                 return None
             colnames = [col[0] for col in desc]
-            return dict(zip(colnames, row))
+            return dict(zip(colnames, row, strict=False))
         return None
 
     def fetchall_to_dict(self) -> list[dict[str, Any]] | None:
@@ -94,7 +87,7 @@ class PSQLDatabase:
             if not rows or not desc:
                 return None
             colnames = [col[0] for col in desc]
-            return [dict(zip(colnames, row)) for row in rows]
+            return [dict(zip(colnames, row, strict=False)) for row in rows]
         return None
 
     def fetchone_as(self, model: type[M]) -> M | None:

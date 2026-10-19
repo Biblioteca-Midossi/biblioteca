@@ -1,4 +1,4 @@
-import { Box, Card, TextInput } from '@mantine/core'
+import { Card, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import type { ChangeEvent, KeyboardEvent } from 'react'
 

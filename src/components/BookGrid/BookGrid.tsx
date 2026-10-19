@@ -1,8 +1,8 @@
-import { Group, Pagination, SimpleGrid, Stack, Text } from '@mantine/core'
 import { SearchBar } from '@local/components/SearchBar'
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
 import { getResponsivePadding } from '@local/styles/bookGridStyles'
 import type { Book } from '@local/types/book'
+import { Group, Pagination, SimpleGrid, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 
 interface BookGridProps {
@@ -20,13 +20,13 @@ export function BookGrid({
   page,
   onPageChange,
   onSearch,
-  renderBookCard
+  renderBookCard,
 }: BookGridProps) {
   const currentBreakpoint = getBreakpoints()
 
   return (
     <>
-      {books instanceof Array ? (
+      {Array.isArray(books) ? (
         <SimpleGrid
           cols={{
             xs: 2,
@@ -35,9 +35,7 @@ export function BookGrid({
             xl: 8,
           }}
           spacing="xs"
-          className={
-            `mt-4 mb-1 w-full items-center pt-2 pl-[${getResponsivePadding(currentBreakpoint)}] pr-[${getResponsivePadding(currentBreakpoint)}]`
-          }
+          className={`mt-4 mb-1 w-full items-center pt-2 pl-[${getResponsivePadding(currentBreakpoint)}] pr-[${getResponsivePadding(currentBreakpoint)}]`}
         >
           {books.map((book) => renderBookCard(book))}
         </SimpleGrid>
@@ -49,16 +47,8 @@ export function BookGrid({
         </Group>
       )}
 
-      <Stack
-        align="center"
-        mb="xl"
-      >
-        <Pagination
-          total={maxpage}
-          value={page}
-          onChange={onPageChange}
-          color="midossi"
-        />
+      <Stack align="center" mb="xl">
+        <Pagination total={maxpage} value={page} onChange={onPageChange} color="midossi" />
         <SearchBar onSearch={onSearch} />
       </Stack>
     </>

@@ -1,12 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { ProtectedPage } from '@local/components/ProtectedPage'
+import { updateUser, useUserlist } from '@local/hooks/useUserlist'
+import type { User } from '@local/types/user'
 import { Box, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
+import { createFileRoute } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
-import { updateUser, useUserlist } from '@local/hooks/useUserlist'
-import { ProtectedPage } from '@local/components/ProtectedPage'
-import type { User } from '@local/types/user'
+import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/userlist')({
   component: () => (
@@ -22,7 +22,7 @@ interface RoleOption {
 }
 
 function useRoles() {
-  const [roles, setRoles] = useState<RoleOption[]>([])
+  const [roles, setRoles] = useState<Array<RoleOption>>([])
 
   useEffect(() => {
     // Hardcoded roles matching DB seed. Replace with API call later.
@@ -76,7 +76,9 @@ function EditUserForm({ user, onSaved }: EditUserFormProps) {
         />
       </Stack>
       <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={() => modals.closeAll()}>Cancel</Button>
+        <Button variant="default" onClick={() => modals.closeAll()}>
+          Cancel
+        </Button>
         <Button onClick={handleSave}>Save</Button>
       </Group>
     </>
@@ -91,7 +93,11 @@ function UserList() {
 
   function handleEdit(user: User) {
     modals.open({
-      title: <Text>Editing <code>{user.username}</code> (ID {user.id})</Text>,
+      title: (
+        <Text>
+          Editing <code>{user.username}</code> (ID {user.id})
+        </Text>
+      ),
       centered: true,
       children: <EditUserForm user={user} onSaved={refetch} />,
     })
@@ -119,7 +125,7 @@ function UserList() {
           Edit
         </Button>
       ),
-    }
+    },
   ]
 
   return (

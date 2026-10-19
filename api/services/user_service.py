@@ -38,6 +38,6 @@ async def update_user_profile(user_id: int, profile_data: dict[str, object]) -> 
         update_fields = ", ".join([f"{k} = %s" for k in profile_data.keys()])
         query = f"UPDATE utenti SET {update_fields} WHERE id = %s"
 
-        values = list(profile_data.values()) + [user_id]
+        values = [*list(profile_data.values()), user_id]
         cursor.execute(query, values)
         db.commit()

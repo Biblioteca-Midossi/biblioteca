@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, EmailStr
 
 from api.models.enums import Istituto
@@ -21,11 +19,11 @@ class LoginRequest(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
-    nome: Optional[str]
-    cognome: Optional[str]
-    email: Optional[EmailStr]
-    bio: Optional[str]
-    istituto: Optional[Istituto]
+    nome: str | None
+    cognome: str | None
+    email: EmailStr | None
+    bio: str | None
+    istituto: Istituto | None
 
 
 # ─── Role & Permission Models ────────────────────────────────────────────────

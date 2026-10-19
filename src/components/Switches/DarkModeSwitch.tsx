@@ -1,5 +1,5 @@
 import { Switch, useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
-import { IconMoonFilled, IconSunFilled } from "@tabler/icons-react"
+import { IconMoonFilled, IconSunFilled } from '@tabler/icons-react'
 
 export function DarkModeSwitch() {
   const { toggleColorScheme } = useMantineColorScheme({ keepTransitions: true })

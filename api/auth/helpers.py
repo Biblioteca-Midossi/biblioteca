@@ -1,9 +1,8 @@
 import hashlib
 import secrets
-from datetime import datetime
 
 from authx import TokenPayload
-from fastapi import HTTPException, Depends
+from fastapi import Depends, HTTPException
 
 from api.auth import auth
 from api.lib.database import PSQLDatabase

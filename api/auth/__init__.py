@@ -1,17 +1,15 @@
 import os
 from datetime import timedelta
 
-from dotenv import load_dotenv
 from authx import AuthX, AuthXConfig
+from dotenv import load_dotenv
 
 load_dotenv()
 
 JWT_ACCESS_TOKEN_EXPIRES = timedelta(
     minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", "15"))
 )
-JWT_REFRESH_TOKEN_EXPIRES = timedelta(
-    days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", "30"))
-)
+JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", "30")))
 
 
 class Auth(AuthX):
@@ -38,10 +36,8 @@ auth = Auth(
         JWT_COOKIE_SECURE=os.getenv("JWT_COOKIE_SECURE", "false").lower() == "true",
         JWT_COOKIE_HTTP_ONLY=True,
         # Enable in production if you need CSRF double-submit protection
-        JWT_COOKIE_CSRF_PROTECT=os.getenv("JWT_COOKIE_CSRF_PROTECT", "false").lower()
-        == "true",
-        JWT_CSRF_IN_COOKIES=os.getenv("JWT_COOKIE_CSRF_PROTECT", "false").lower()
-        == "true",
+        JWT_COOKIE_CSRF_PROTECT=os.getenv("JWT_COOKIE_CSRF_PROTECT", "false").lower() == "true",
+        JWT_CSRF_IN_COOKIES=os.getenv("JWT_COOKIE_CSRF_PROTECT", "false").lower() == "true",
         JWT_ACCESS_TOKEN_EXPIRES=JWT_ACCESS_TOKEN_EXPIRES,
         JWT_REFRESH_TOKEN_EXPIRES=JWT_REFRESH_TOKEN_EXPIRES,
     )

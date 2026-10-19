@@ -1,12 +1,13 @@
-import { useNavigate } from '@tanstack/react-router'
-import { Text } from '@mantine/core'
-import { modals } from '@mantine/modals'
-import { useBookGrid } from '@local/hooks/useBookGrid'
 import { BookCard } from '@local/components/BookGrid/BookCard'
+import type { EditBookFormValues } from '@local/components/BookGrid/BookEditDialog'
+import { openBookEditModal } from '@local/components/BookGrid/BookEditDialog'
 import { BookGrid } from '@local/components/BookGrid/BookGrid'
 import { BookOptionsMenu } from '@local/components/BookGrid/BookOptionsMenu'
-import { openBookEditModal } from '@local/components/BookGrid/BookEditDialog'
-import type { EditBookFormValues } from '@local/components/BookGrid/BookEditDialog'
+import { useBookGrid } from '@local/hooks/useBookGrid'
+import type { Book } from '@local/types/book'
+import { Text } from '@mantine/core'
+import { modals } from '@mantine/modals'
+import { useNavigate } from '@tanstack/react-router'
 import type { MouseEvent } from 'react'
 
 export function BookGridDashboard() {
@@ -28,7 +29,7 @@ export function BookGridDashboard() {
     deleteBook,
   } = useBookGrid()
 
-  function handleMenuOpen(event: MouseEvent<HTMLButtonElement>, book: any) {
+  function handleMenuOpen(event: MouseEvent<HTMLButtonElement>, book: Partial<Book>) {
     event.preventDefault()
     setSelectedBook(book)
     setAnchorEl(event.currentTarget)
@@ -49,10 +50,12 @@ export function BookGridDashboard() {
       const bookData = {
         id: selectedBook?.id,
         titolo: values.titolo,
-        nomeAutore: values.nomeAutore ? values.nomeAutore.split(',').map(s => s.trim()) : [],
-        cognomeAutore: values.cognomeAutore ? values.cognomeAutore.split(',').map(s => s.trim()) : [],
+        nomeAutore: values.nomeAutore ? values.nomeAutore.split(',').map((s) => s.trim()) : [],
+        cognomeAutore: values.cognomeAutore
+          ? values.cognomeAutore.split(',').map((s) => s.trim())
+          : [],
         isbn: values.isbn,
-        genere: values.genere ? values.genere.split(',').map(s => s.trim()) : [],
+        genere: values.genere ? values.genere.split(',').map((s) => s.trim()) : [],
         quantita: values.quantita,
         casaEditrice: values.casaEditrice,
         istituto: values.istituto,
@@ -65,7 +68,7 @@ export function BookGridDashboard() {
         await fetchBooks(page, limit, '')
         modals.closeAll()
       }
-    } catch (error) {
+    } catch (_error) {
       /* handled by the store notification */
     }
   }
@@ -73,18 +76,13 @@ export function BookGridDashboard() {
   return (
     <>
       <BookGrid
-        books={books instanceof Array ? filteredBooks : books}
+        books={Array.isArray(books) ? filteredBooks : books}
         maxpage={maxpage}
         page={page}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
         renderBookCard={(book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            showId
-            onMenuOpen={handleMenuOpen}
-          />
+          <BookCard key={book.id} book={book} showId onMenuOpen={handleMenuOpen} />
         )}
       />
 
@@ -101,8 +99,8 @@ export function BookGridDashboard() {
             centered: true,
             children: (
               <Text size="sm">
-                Sei sicuro di voler eliminare il libro &quot;{selectedBook?.titolo}&quot;?
-                Questa azione non può essere annullata.
+                Sei sicuro di voler eliminare il libro &quot;{selectedBook?.titolo}&quot;? Questa
+                azione non può essere annullata.
               </Text>
             ),
             labels: { confirm: 'Elimina', cancel: 'Annulla' },

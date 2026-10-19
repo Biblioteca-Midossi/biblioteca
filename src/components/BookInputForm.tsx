@@ -1,8 +1,8 @@
-import { Button, Group, Select, Stack, Tabs, TextInput, Textarea, Tooltip } from '@mantine/core'
-import { modals } from '@mantine/modals'
-import { useForm } from '@mantine/form'
-import { IconHelp } from '@tabler/icons-react'
 import useBookStore from '@local/hooks/useBookStore'
+import { Button, Group, Select, Stack, Tabs, Textarea, TextInput, Tooltip } from '@mantine/core'
+import { useForm } from '@mantine/form'
+import { modals } from '@mantine/modals'
+import { IconHelp } from '@tabler/icons-react'
 import type { ChangeEvent } from 'react'
 
 interface BookFormValues {
@@ -82,7 +82,7 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
     }
   }
 
-  const istituti = ["ITT", "LAC", "LAV"]
+  const istituti = ['ITT', 'LAC', 'LAV']
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -101,14 +101,16 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
               label="Istituto per Nome o ID (es. ITT, 1)"
               className="transition-none"
               classNames={{
-                dropdown: "!rounded-t-none !border-t-0 !border-[var(--mantine-primary-color-filled)]",
-                input: "!transition-none [&[data-expanded]]:!rounded-b-none [&[data-expanded]]:!border-[var(--mantine-primary-color-filled)]"
+                dropdown:
+                  '!rounded-t-none !border-t-0 !border-[var(--mantine-primary-color-filled)]',
+                input:
+                  '!transition-none [&[data-expanded]]:!rounded-b-none [&[data-expanded]]:!border-[var(--mantine-primary-color-filled)]',
               }}
               comboboxProps={{
                 position: 'bottom',
                 offset: 0,
                 withinPortal: true,
-                middlewares: { flip: false, shift: false }
+                middlewares: { flip: false, shift: false },
               }}
               rightSection={
                 <Tooltip label="ITT: 1, LAC: 2, LAV: 3">
@@ -127,46 +129,18 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
 
         <Tabs.Panel value="autore" pt="xs">
           <Stack gap="xs">
-            <TextInput
-              required
-              label="Nome"
-              {...form.getInputProps('nomeAutore')}
-            />
-            <TextInput
-              required
-              label="Cognome"
-              {...form.getInputProps('cognomeAutore')}
-            />
+            <TextInput required label="Nome" {...form.getInputProps('nomeAutore')} />
+            <TextInput required label="Cognome" {...form.getInputProps('cognomeAutore')} />
           </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="libro" pt="xs">
           <Stack gap="xs">
-            <TextInput
-              required
-              label="Isbn"
-              {...form.getInputProps('isbn')}
-            />
-            <TextInput
-              required
-              label="Titolo"
-              {...form.getInputProps('titolo')}
-            />
-            <TextInput
-              required
-              label="Genere"
-              {...form.getInputProps('genere')}
-            />
-            <TextInput
-              required
-              label="Quantità"
-              {...form.getInputProps('quantita')}
-            />
-            <TextInput
-              required
-              label="Casa Editrice"
-              {...form.getInputProps('casaEditrice')}
-            />
+            <TextInput required label="Isbn" {...form.getInputProps('isbn')} />
+            <TextInput required label="Titolo" {...form.getInputProps('titolo')} />
+            <TextInput required label="Genere" {...form.getInputProps('genere')} />
+            <TextInput required label="Quantità" {...form.getInputProps('quantita')} />
+            <TextInput required label="Casa Editrice" {...form.getInputProps('casaEditrice')} />
             <Textarea
               required
               label="Descrizione"
@@ -174,19 +148,9 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
               description={`${form.values.descrizione.length}/1024`}
               maxLength={1024}
             />
-            <Button
-              variant="outline"
-              color="midossi"
-              component="label"
-              fullWidth
-            >
+            <Button variant="outline" color="midossi" component="label" fullWidth>
               Carica copertina
-              <input
-                type="file"
-                accept="file"
-                onChange={onSelectFile}
-                hidden
-              />
+              <input type="file" accept="file" onChange={onSelectFile} hidden />
             </Button>
             {form.values.preview && (
               <div className="flex justify-center">
@@ -198,7 +162,9 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
       </Tabs>
 
       <Group justify="flex-end" mt="md">
-        <Button onClick={onClose} variant="default">Annulla</Button>
+        <Button onClick={onClose} variant="default">
+          Annulla
+        </Button>
         <Button type="submit">Conferma</Button>
       </Group>
     </form>

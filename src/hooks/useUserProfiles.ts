@@ -1,6 +1,6 @@
-import { api } from "@local/hooks/api"
-import { notifications } from "@mantine/notifications"
-import type { User } from "@local/types/user"
+import { api } from '@local/hooks/api'
+import type { User } from '@local/types/user'
+import { notifications } from '@mantine/notifications'
 
 export async function fetchUserMe(): Promise<User> {
   try {

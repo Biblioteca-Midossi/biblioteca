@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
@@ -71,9 +71,9 @@ class UserProfileOut(BaseModel):
     role_id: int
     role_name: str = ""
     permissions: list[str] = []
-    bio: Optional[str] = None
-    profile_picture: Optional[str] = None
-    last_login: Optional[datetime] = None
+    bio: str | None = None
+    profile_picture: str | None = None
+    last_login: datetime | None = None
 
 
 class UserListItem(BaseModel):

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from fastapi import APIRouter, HTTPException, Request
@@ -19,18 +19,14 @@ from api.lib.logger import log
 from api.models.auth import LoginRequest, RegisterRequest
 from api.models.responses import MessageResponse
 
-router = APIRouter(
-    prefix="/auth", tags=["auth"], responses={404: {"description": "Not found"}}
-)
+router = APIRouter(prefix="/auth", tags=["auth"], responses={404: {"description": "Not found"}})
 
 
 @router.post("/register", status_code=201, response_model=MessageResponse)
 async def register(data: RegisterRequest) -> MessageResponse:
     try:
         if check_user_exists(data.username, str(data.email)):
-            raise HTTPException(
-                status_code=400, detail="Username o email già in uso"
-            )
+            raise HTTPException(status_code=400, detail="Username o email già in uso")
 
         hashed = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
         create_user(data, hashed)
@@ -47,9 +43,7 @@ async def register(data: RegisterRequest) -> MessageResponse:
 async def login(data: LoginRequest):
     try:
         row = fetch_user_for_login(data.login)
-        if not row or not bcrypt.checkpw(
-            data.password.encode(), row.password.encode()
-        ):
+        if not row or not bcrypt.checkpw(data.password.encode(), row.password.encode()):
             raise HTTPException(status_code=401, detail="Credenziali non valide")
 
         uid = str(row.id)
@@ -67,7 +61,7 @@ async def login(data: LoginRequest):
         # Generate refresh token and store in sessions table
         refresh_token_str = generate_refresh_token()
         token_hash = hash_token(refresh_token_str)
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=auth.refresh_max_age())
+        expires_at = datetime.now(UTC) + timedelta(seconds=auth.refresh_max_age())
 
         with PSQLDatabase() as db:
             cursor = db.get_cursor()
@@ -76,22 +70,16 @@ async def login(data: LoginRequest):
                 (row.id, token_hash, expires_at),
             )
             # Update last_login
-            cursor.execute(
-                "UPDATE utenti SET last_login = NOW() WHERE id = %s", (row.id,)
-            )
+            cursor.execute("UPDATE utenti SET last_login = NOW() WHERE id = %s", (row.id,))
             db.commit()
 
         resp = JSONResponse(
-            MessageResponse(message="Login effettuato con successo").model_dump(
-                by_alias=True
-            ),
+            MessageResponse(message="Login effettuato con successo").model_dump(by_alias=True),
             200,
         )
 
         auth.set_access_cookies(access_token, resp, max_age=auth.access_max_age())
-        auth.set_refresh_cookies(
-            refresh_token_str, resp, max_age=auth.refresh_max_age()
-        )
+        auth.set_refresh_cookies(refresh_token_str, resp, max_age=auth.refresh_max_age())
 
         return resp
 
@@ -123,10 +111,8 @@ async def refresh(request: Request):
 
             user_id, revoked, expires_at = row
 
-            if revoked or expires_at < datetime.now(timezone.utc):
-                raise HTTPException(
-                    status_code=401, detail="Refresh token non valido o scaduto"
-                )
+            if revoked or expires_at < datetime.now(UTC):
+                raise HTTPException(status_code=401, detail="Refresh token non valido o scaduto")
 
             # Rotate: revoke old session
             cursor.execute(
@@ -137,7 +123,7 @@ async def refresh(request: Request):
             # Create new refresh token
             new_refresh = generate_refresh_token()
             new_hash = hash_token(new_refresh)
-            new_expires = datetime.now(timezone.utc) + timedelta(seconds=auth.refresh_max_age())
+            new_expires = datetime.now(UTC) + timedelta(seconds=auth.refresh_max_age())
             cursor.execute(
                 "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (%s, %s, %s)",
                 (user_id, new_hash, new_expires),
@@ -173,16 +159,12 @@ async def refresh(request: Request):
         new_access = auth.create_access_token(uid=str(user_id), data=extra)
 
         resp = JSONResponse(
-            MessageResponse(message="Token aggiornato con successo").model_dump(
-                by_alias=True
-            ),
+            MessageResponse(message="Token aggiornato con successo").model_dump(by_alias=True),
             200,
         )
 
         auth.set_access_cookies(new_access, resp, max_age=auth.access_max_age())
-        auth.set_refresh_cookies(
-            new_refresh, resp, max_age=auth.refresh_max_age()
-        )
+        auth.set_refresh_cookies(new_refresh, resp, max_age=auth.refresh_max_age())
 
         return resp
 

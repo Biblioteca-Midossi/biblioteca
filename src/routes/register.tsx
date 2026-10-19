@@ -1,14 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
-import {
-  Button,
-  Container,
-  Group,
-  Paper,
-  Stack,
-  TextInput,
-  Title
-} from '@mantine/core'
 import { useRegister } from '@local/hooks/useRegister'
+import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
+import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/register')({
   component: Register,
@@ -27,9 +19,16 @@ function Register() {
             <TextInput required label="Cognome" {...form.getInputProps('cognome')} />
             <TextInput required label="Username" {...form.getInputProps('username')} />
             <TextInput required label="Email" type="email" {...form.getInputProps('email')} />
-            <TextInput required label="Password" type="password" {...form.getInputProps('password')} />
+            <TextInput
+              required
+              label="Password"
+              type="password"
+              {...form.getInputProps('password')}
+            />
             <TextInput required label="Istituto" {...form.getInputProps('istituto')} />
-            <Button type="submit" fullWidth>Registrati</Button>
+            <Button type="submit" fullWidth>
+              Registrati
+            </Button>
           </Stack>
         </form>
       </Paper>

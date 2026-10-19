@@ -1,7 +1,10 @@
 import psycopg
 from fastapi import HTTPException, UploadFile
 from starlette.responses import JSONResponse
+
 from api.exceptions import InvalidRequestError
+from api.lib.database import PSQLDatabase
+from api.lib.logger import log
 from api.models.requests import (
     AutoreData,
     CollocazioneData,
@@ -9,8 +12,6 @@ from api.models.requests import (
     LibroData,
 )
 from api.services.file_operations import upload_thumbnail
-from api.lib.database import PSQLDatabase
-from api.lib.logger import log
 
 
 def check_isbn_exists(isbn: str) -> bool:
@@ -28,8 +29,7 @@ def insert_collocazione(collocazione: CollocazioneData) -> int:
         cursor = db.get_cursor()
 
         cursor.execute(
-            "select id_collocazione from collocazioni "
-            "where scaffale = %s and istituto = %s",
+            "select id_collocazione from collocazioni where scaffale = %s and istituto = %s",
             (scaffale, istituto),
         )
 
@@ -63,9 +63,7 @@ def insert_autore(autore: AutoreData) -> int:
             return author[0]
         else:
             cursor.execute(
-                "insert into autori "
-                "(nome, cognome) values (%s, %s) "
-                "returning id_autore",
+                "insert into autori (nome, cognome) values (%s, %s) returning id_autore",
                 (nome, cognome),
             )
             db.commit()
@@ -107,9 +105,7 @@ def insert_libro_autori(id_libro: int, id_autore: int):
         db.commit()
 
 
-async def insert_book_into_database(
-    data: CreateBookPayload, thumbnail: UploadFile | None
-):
+async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFile | None):
     collocazione = CollocazioneData(
         istituto=data.istituto,
         scaffale=data.scaffale,
@@ -124,23 +120,17 @@ async def insert_book_into_database(
     )
 
     # Parse authors
-    author_names = [
-        name.strip() for names in data.nome_autore for name in names.split(",")
-    ]
+    author_names = [name.strip() for names in data.nome_autore for name in names.split(",")]
     author_surnames = [
-        surname.strip()
-        for surnames in data.cognome_autore
-        for surname in surnames.split(",")
+        surname.strip() for surnames in data.cognome_autore for surname in surnames.split(",")
     ]
 
     if len(author_names) != len(author_surnames):
-        raise HTTPException(
-            status_code=400, detail="Mismatch between number of names and surnames"
-        )
+        raise HTTPException(status_code=400, detail="Mismatch between number of names and surnames")
 
     authors = [
         AutoreData(nome=nome, cognome=cognome)
-        for nome, cognome in zip(author_names, author_surnames)
+        for nome, cognome in zip(author_names, author_surnames, strict=False)
     ]
 
     try:

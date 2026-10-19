@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
 import { api } from '@local/hooks/api'
-import { notifications } from '@mantine/notifications'
 import type { User } from '@local/types/user'
+import { notifications } from '@mantine/notifications'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
 
 interface FetchUsersResponse {
   users: Array<User>
@@ -49,10 +50,9 @@ export async function updateUser(
   userData: User
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await api.put<UpdateUserResponse>(
-      `/users/update-user/${userId}`,
-      { user_data: userData }
-    )
+    const response = await api.put<UpdateUserResponse>(`/users/update-user/${userId}`, {
+      user_data: userData,
+    })
 
     if (response.status === 200) {
       notifications.show({
@@ -64,14 +64,17 @@ export async function updateUser(
     }
 
     return { success: false, error: 'Update failed' }
-  } catch (error: any) {
-    const detail = error?.response?.data?.detail ?? 'Errore imprevisto durante l\'aggiornamento'
+  } catch (error) {
+    const detail = axios.isAxiosError(error)
+      ? (error.response?.data as { detail?: string } | undefined)?.detail
+      : undefined
+    const message = detail ?? "Errore imprevisto durante l'aggiornamento"
     console.error('Error updating user:', error)
     notifications.show({
       title: 'Errore',
-      message: `Richiesta fallita: ${detail}`,
+      message: `Richiesta fallita: ${message}`,
       color: 'red',
     })
-    return { success: false, error: detail }
+    return { success: false, error: message }
   }
 }

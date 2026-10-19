@@ -1,7 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { BookGridDashboard } from '@local/components/BookGrid/BookGridDashboard'
+import { openBookAddModal } from '@local/components/BookInputForm'
+import { ProtectedPage } from '@local/components/ProtectedPage'
+import { StatCard } from '@local/components/StatCard'
+import { UserCard } from '@local/components/UserCard'
+import { api } from '@local/hooks/api'
+import type { Book } from '@local/types/book'
+import type { User } from '@local/types/user'
 import {
   Alert,
-  Box, Button,
+  Box,
+  Button,
   Card,
   Container,
   Group,
@@ -12,16 +20,9 @@ import {
   Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { IconPlus } from '@tabler/icons-react'
+import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { openBookAddModal } from '@local/components/BookInputForm'
-import { BookGridDashboard } from '@local/components/BookGrid/BookGridDashboard'
-import { ProtectedPage } from '@local/components/ProtectedPage'
-import { api } from '@local/hooks/api'
-import { IconPlus } from "@tabler/icons-react"
-import { UserCard } from "@local/components/UserCard"
-import { StatCard } from "@local/components/StatCard"
-import type { Book } from '@local/types/book'
-import type { User } from '@local/types/user'
 
 export const Route = createFileRoute('/dashboard')({
   component: () => (
@@ -50,13 +51,14 @@ function Dashboard() {
 
         setRecentBooks(booksRes.data?.books || [])
         setNewUsers(usersRes.data?.users || [])
-      } catch (err: any) {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : undefined
         notifications.show({
           title: 'Errore',
-          message: err?.message || 'Impossibile caricare i dati della dashboard',
+          message: message ?? 'Impossibile caricare i dati della dashboard',
           color: 'red',
         })
-        setError(err?.message || 'Failed to load dashboard data')
+        setError(message ?? 'Failed to load dashboard data')
       } finally {
         setLoading(false)
       }
@@ -69,11 +71,19 @@ function Dashboard() {
     <Box className="flex flex-col items-center w-full py-4">
       <Container fluid className="max-w-full px-8">
         <Box mb="xl">
-          <Title order={2} fw={600}>Dashboard</Title>
-          <Text size="sm" c="dimmed">Overview of your library management system</Text>
+          <Title order={2} fw={600}>
+            Dashboard
+          </Title>
+          <Text size="sm" c="dimmed">
+            Overview of your library management system
+          </Text>
         </Box>
 
-        {error && <Alert color="red" mb="md">{error}</Alert>}
+        {error && (
+          <Alert color="red" mb="md">
+            {error}
+          </Alert>
+        )}
 
         <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md" mb="xl">
           <StatCard loading={loading} title="Total Books" value={stats.total_books} />
@@ -84,7 +94,9 @@ function Dashboard() {
 
         <Box mb="xl">
           <Group align="center" mb="xs">
-            <Title order={4} fw={600}>Recently Added Books</Title>
+            <Title order={4} fw={600}>
+              Recently Added Books
+            </Title>
             <Button leftSection={<IconPlus size={16} />} onClick={openBookAddModal}>
               New Book
             </Button>
@@ -109,8 +121,14 @@ function Dashboard() {
                     </Card.Section>
                   )}
                   <Box mt="sm" className="grow">
-                    <Text size="sm" fw={600} truncate>{book.titolo}</Text>
-                    {book.autori && <Text size="xs" c="dimmed">{book.autori instanceof Array ? book.autori.join(', ') : book.autori}</Text>}
+                    <Text size="sm" fw={600} truncate>
+                      {book.titolo}
+                    </Text>
+                    {book.autori && (
+                      <Text size="xs" c="dimmed">
+                        {Array.isArray(book.autori) ? book.autori.join(', ') : book.autori}
+                      </Text>
+                    )}
                   </Box>
                 </Card>
               ))
@@ -121,7 +139,9 @@ function Dashboard() {
         </Box>
 
         <Box mb="xl">
-          <Title order={4} mb="sm" fw={600}>New Users</Title>
+          <Title order={4} mb="sm" fw={600}>
+            New Users
+          </Title>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
@@ -136,9 +156,7 @@ function Dashboard() {
                 </Card>
               ))
             ) : newUsers.length > 0 ? (
-              newUsers.map((user) => (
-                <UserCard key={user.id} user={user}/>
-              ))
+              newUsers.map((user) => <UserCard key={user.id} user={user} />)
             ) : (
               <Text c="dimmed">No new users yet</Text>
             )}
@@ -146,7 +164,9 @@ function Dashboard() {
         </Box>
 
         <Box mt="xl">
-          <Title order={4} mb="sm" fw={600}>All Books</Title>
+          <Title order={4} mb="sm" fw={600}>
+            All Books
+          </Title>
           <BookGridDashboard />
         </Box>
       </Container>

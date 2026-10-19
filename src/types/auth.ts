@@ -1,4 +1,4 @@
-import type { IstitutoEnum } from "@local/types/user"
+import type { IstitutoEnum } from '@local/types/user'
 
 export interface RegisterValues {
   nome: string

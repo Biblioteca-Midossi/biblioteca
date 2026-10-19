@@ -1,22 +1,18 @@
 import { LoadingScreen } from '@local/components/LoadingScreen'
-import { useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { useAuth } from '@local/hooks/authContext'
+import { useNavigate } from '@tanstack/react-router'
 import type { ReactElement } from 'react'
+import { useEffect } from 'react'
 
 interface ProtectedPageProps {
   /** User needs at least one of these permissions (OR). */
-  permissions?: string[]
+  permissions?: Array<string>
   /** Require authentication (any user). */
   requireAuth?: boolean
   children: ReactElement
 }
 
-export function ProtectedPage({
-  permissions,
-  requireAuth = true,
-  children,
-}: ProtectedPageProps) {
+export function ProtectedPage({ permissions, requireAuth = true, children }: ProtectedPageProps) {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
@@ -29,7 +25,7 @@ export function ProtectedPage({
     }
 
     if (user && permissions && permissions.length > 0) {
-      const hasAny = permissions.some(p => user.permissions.includes(p))
+      const hasAny = permissions.some((p) => user.permissions.includes(p))
       if (!hasAny) {
         navigate({ to: '/' })
       }

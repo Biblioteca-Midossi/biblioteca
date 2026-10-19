@@ -1,20 +1,16 @@
-from fastapi import APIRouter, HTTPException, Path, UploadFile, File, Depends, Query
+import json
+import os
+from typing import Annotated
+
+import psycopg
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Query, UploadFile
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
-import json
-
-import os
-
-import psycopg
-
-from typing import Annotated
-
 from api.auth.helpers import require_permission
-from api.services.db_operations import insert_book_into_database
-from api.services.file_operations import convert_to_png
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
+from api.models.requests import CreateBookPayload, UpdateBookPayload
 from api.models.responses import (
     BookDetailResponse,
     BookResponse,
@@ -23,13 +19,11 @@ from api.models.responses import (
     RecentBookResponse,
     RecentBooksListResponse,
 )
-from api.models.requests import CreateBookPayload, UpdateBookPayload
 from api.models.rows import BookDetailRow, BookListRow, BookThumbnailRow, RecentBookRow
+from api.services.db_operations import insert_book_into_database
+from api.services.file_operations import convert_to_png
 
-
-router = APIRouter(
-    prefix="/books", tags=["books"], responses={404: {"description": "Not found"}}
-)
+router = APIRouter(prefix="/books", tags=["books"], responses={404: {"description": "Not found"}})
 
 
 @router.get("/", response_model=BooksListResponse)
@@ -84,9 +78,7 @@ async def get_books(
                 (limit, pattern, pattern, pattern, pattern, limit, offset),
             )
         else:
-            cursor.execute(
-                base_query.replace("-- WHERE_CLAUSE", ""), (limit, limit, offset)
-            )
+            cursor.execute(base_query.replace("-- WHERE_CLAUSE", ""), (limit, limit, offset))
 
         raw_books = db.fetchall_as(BookListRow)
 
@@ -231,9 +223,7 @@ async def create_book(data: Request, thumbnail: UploadFile | None = File(None)):
         data_str = form_data.get("data")
 
         if not data_str or not isinstance(data_str, str):
-            raise HTTPException(
-                status_code=400, detail="Campo 'data' mancante nel form"
-            )
+            raise HTTPException(status_code=400, detail="Campo 'data' mancante nel form")
 
         payload = CreateBookPayload.model_validate(json.loads(data_str))
 
@@ -248,7 +238,9 @@ async def create_book(data: Request, thumbnail: UploadFile | None = File(None)):
 
 
 @router.put(
-    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(require_permission("edit_book"))]
+    "/{book_id}",
+    response_model=MessageResponse,
+    dependencies=[Depends(require_permission("edit_book"))],
 )
 async def update_book(
     updated_book: Request,
@@ -260,9 +252,7 @@ async def update_book(
         data_str = form_data.get("updatedBook")
 
         if not data_str or not isinstance(data_str, str):
-            raise HTTPException(
-                status_code=400, detail="Campo 'updatedBook' mancante nel form"
-            )
+            raise HTTPException(status_code=400, detail="Campo 'updatedBook' mancante nel form")
 
         data = UpdateBookPayload.model_validate(json.loads(data_str))
 
@@ -283,17 +273,13 @@ async def update_book(
                 "descrizione": "descrizione",
             }
             for json_key, db_col in field_map.items():
-                val = getattr(
-                    data, json_key.replace("casaEditrice", "casa_editrice"), None
-                )
+                val = getattr(data, json_key.replace("casaEditrice", "casa_editrice"), None)
                 if val is not None:
                     update_fields[db_col] = val
 
             if data.genere is not None:
                 # Remove existing genre associations
-                cursor.execute(
-                    "DELETE FROM libro_generi WHERE id_libro = %s", (book_id,)
-                )
+                cursor.execute("DELETE FROM libro_generi WHERE id_libro = %s", (book_id,))
 
                 # Ensure genres is a list
                 genres = data.genere if isinstance(data.genere, list) else [data.genere]
@@ -350,7 +336,7 @@ async def update_book(
                 )
                 seen = set()
 
-                for nome, cognome in zip(names, surnames):
+                for nome, cognome in zip(names, surnames, strict=False):
                     cursor.execute(
                         "SELECT id_autore FROM autori WHERE nome = %s AND cognome = %s",
                         (nome, cognome),
@@ -426,7 +412,9 @@ async def update_book(
 
 
 @router.delete(
-    "/{book_id}", response_model=MessageResponse, dependencies=[Depends(require_permission("delete_book"))]
+    "/{book_id}",
+    response_model=MessageResponse,
+    dependencies=[Depends(require_permission("delete_book"))],
 )
 async def delete_book(book_id: int = Path(...)):
     try:

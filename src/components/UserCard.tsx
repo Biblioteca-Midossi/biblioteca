@@ -1,5 +1,5 @@
-import { Avatar, Box, Card, Group, Text } from "@mantine/core"
-import type { User } from "@local/types/user"
+import type { User } from '@local/types/user'
+import { Avatar, Box, Card, Group, Text } from '@mantine/core'
 
 interface UserCardProps {
   user: Partial<User>
@@ -16,8 +16,12 @@ export function UserCard({ user }: UserCardProps) {
           size={50}
         />
         <Box key={user.id}>
-          <Text size="sm" fw={600}>{user.nome} {user.cognome}</Text>
-          <Text size="xs" c="dimmed">@{user.username}</Text>
+          <Text size="sm" fw={600}>
+            {user.nome} {user.cognome}
+          </Text>
+          <Text size="xs" c="dimmed">
+            @{user.username}
+          </Text>
         </Box>
       </Group>
     </Card>

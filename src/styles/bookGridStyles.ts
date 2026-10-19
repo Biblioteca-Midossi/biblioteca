@@ -1,11 +1,16 @@
 /** Horizontal padding based on current breakpoint */
 export function getResponsivePadding(breakpoint: string): string {
   switch (breakpoint) {
-    case 'xl': return '4rem'
-    case 'lg': return '2.75rem'
-    case 'md': return '1.75rem'
-    case 'sm': return '1.25rem'
-    default:   return '.75rem'
+    case 'xl':
+      return '4rem'
+    case 'lg':
+      return '2.75rem'
+    case 'md':
+      return '1.75rem'
+    case 'sm':
+      return '1.25rem'
+    default:
+      return '.75rem'
   }
 }
 
@@ -15,10 +20,15 @@ export function getResponsivePadding(breakpoint: string): string {
  */
 export function getResponsiveCols(breakpoint: string): number {
   switch (breakpoint) {
-    case 'xl': return 16
-    case 'lg': return 6
-    case 'md': return 4
-    case 'sm': return 4
-    default:   return 2
+    case 'xl':
+      return 16
+    case 'lg':
+      return 6
+    case 'md':
+      return 4
+    case 'sm':
+      return 4
+    default:
+      return 2
   }
 }

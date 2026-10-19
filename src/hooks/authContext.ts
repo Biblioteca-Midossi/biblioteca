@@ -1,5 +1,5 @@
+import type { User } from '@local/types/user'
 import { useRouterState } from '@tanstack/react-router'
-import type { User } from "@local/types/user"
 
 export interface AuthState {
   user: User | null
@@ -16,7 +16,7 @@ export function useAuth(): AuthState {
     select: (s) => {
       const ctx = s.matches[0]?.context as { auth?: AuthState } | undefined
       return ctx?.auth ?? defaultAuthState
-    }
+    },
   })
 }
 

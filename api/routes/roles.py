@@ -4,9 +4,7 @@ from api.auth.helpers import require_permission
 from api.lib.database import PSQLDatabase
 from api.models.auth import RoleOut
 
-router = APIRouter(
-    prefix="/roles", tags=["roles"], responses={404: {"description": "Not found"}}
-)
+router = APIRouter(prefix="/roles", tags=["roles"], responses={404: {"description": "Not found"}})
 
 
 @router.get("/", response_model=list[RoleOut])

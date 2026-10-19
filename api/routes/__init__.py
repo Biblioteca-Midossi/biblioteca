@@ -1,7 +1,7 @@
 from importlib import import_module
 from pkgutil import iter_modules
 
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
 
 
 def register_routes(app: FastAPI):

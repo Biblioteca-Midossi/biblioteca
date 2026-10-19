@@ -6,7 +6,7 @@ export interface User {
   email: string
   roleId: number
   roleName: string
-  permissions: string[]
+  permissions: Array<string>
   istituto: IstitutoEnum
   profilePicture: string | null
   bio: string | null

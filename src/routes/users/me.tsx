@@ -1,24 +1,14 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import {
-  Avatar,
-  Badge,
-  Card,
-  Container,
-  Divider,
-  Grid,
-  Group,
-  Text,
-  Title,
-} from '@mantine/core'
-import { IconBriefcase, IconMail } from '@tabler/icons-react'
-import { IstitutoEnum } from '@local/types/user'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { useAuth } from '@local/hooks/authContext'
+import { IstitutoEnum } from '@local/types/user'
+import { Avatar, Badge, Card, Container, Divider, Grid, Group, Text, Title } from '@mantine/core'
+import { IconBriefcase, IconMail } from '@tabler/icons-react'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 function SelfUserPage() {
   const { user } = useAuth()
 
-  if (!user) throw redirect({ to: "/login" })
+  if (!user) throw redirect({ to: '/login' })
 
   return (
     <Container size="md" mt="md">
@@ -34,7 +24,9 @@ function SelfUserPage() {
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 6 }}>
             <Title order={2}>{user.username}</Title>
-            <Text size="sm" mb="xs">{user.nome} {user.cognome}</Text>
+            <Text size="sm" mb="xs">
+              {user.nome} {user.cognome}
+            </Text>
 
             <Grid mt="sm">
               <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -60,11 +52,8 @@ function SelfUserPage() {
 
         <Title order={4}>Institution Details</Title>
         <Text size="sm">
-          Istituto: {
-            user.istituto in IstitutoEnum
-              ? IstitutoEnum[user.istituto]
-              : 'Non specificato'
-          }
+          Istituto:{' '}
+          {user.istituto in IstitutoEnum ? IstitutoEnum[user.istituto] : 'Non specificato'}
         </Text>
       </Card>
     </Container>

@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { api } from '@local/hooks/api'
+import { useAuth } from '@local/hooks/authContext'
 import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { api } from '@local/hooks/api'
-import { useAuth } from '@local/hooks/authContext'
 
 export const Route = createFileRoute('/login')({
   component: Login,
@@ -36,7 +36,7 @@ function Login() {
     try {
       await api.post('/auth/login', { login: values.username, password: values.password })
       navigate({ to: '/' })
-    } catch (error) {
+    } catch (_error) {
       notifications.show({
         title: 'Errore di accesso',
         message: 'Credenziali non valide. Riprova.',
@@ -51,12 +51,7 @@ function Login() {
         <Title order={2}>Login</Title>
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="sm" mt="sm">
-            <TextInput
-              required
-              label="Username"
-              autoFocus
-              {...form.getInputProps('username')}
-            />
+            <TextInput required label="Username" autoFocus {...form.getInputProps('username')} />
             <TextInput
               required
               label="Password"
