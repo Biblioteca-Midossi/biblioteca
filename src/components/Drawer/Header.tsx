@@ -1,6 +1,6 @@
 import { CustomDrawer } from '@local/components/Drawer/CustomDrawer'
 import { DarkModeSwitch } from '@local/components/Switches/DarkModeSwitch'
-import { api } from '@local/hooks/api'
+import { authApi } from '@local/hooks/api'
 import { useAuth } from '@local/hooks/authContext'
 import { ActionIcon, Avatar, Box, Divider, Group, Image, Menu } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
@@ -93,7 +93,7 @@ export function Header() {
                 <Menu.Item
                   onClick={async () => {
                     closeMenu()
-                    await api.post('/auth/logout')
+                    await authApi.logout()
                     navigate({ to: '/' })
                   }}
                   leftSection={<IconLogout size={16} />}

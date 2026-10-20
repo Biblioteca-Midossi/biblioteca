@@ -1,19 +1,11 @@
-import { api } from '@local/hooks/api'
+import type { RegisterRequest } from '@local/api'
+import { authApi } from '@local/hooks/api'
 import { notifications } from '@mantine/notifications'
 import axios from 'axios'
 
-interface RegisterProps {
-  nome: string
-  cognome: string
-  username: string
-  email: string
-  password: string
-  istituto: string | number
-}
-
-export async function register(newUser: RegisterProps): Promise<string> {
+export async function register(newUser: RegisterRequest): Promise<string> {
   try {
-    const response = await api.post('/auth/register', newUser)
+    const response = await authApi.register(newUser)
 
     if (response.status === 201) {
       notifications.show({
@@ -26,15 +18,13 @@ export async function register(newUser: RegisterProps): Promise<string> {
 
     notifications.show({
       title: 'Errore di registrazione',
-      message: response.data.detail,
+      message: detailOf(response.data) ?? 'Errore di registrazione',
       color: 'red',
     })
 
     return 'register-error'
   } catch (error) {
-    const message = axios.isAxiosError(error)
-      ? (error.response?.data as { detail?: string } | undefined)?.detail
-      : undefined
+    const message = axios.isAxiosError(error) ? detailOf(error.response?.data) : undefined
     notifications.show({
       title: 'Errore di registrazione',
       message: message ?? 'Errore imprevisto durante la registrazione',
@@ -43,4 +33,12 @@ export async function register(newUser: RegisterProps): Promise<string> {
 
     return 'register-error'
   }
+}
+
+function detailOf(data: unknown): string | undefined {
+  if (typeof data === 'object' && data !== null && 'detail' in data) {
+    const { detail } = data as { detail?: unknown }
+    if (typeof detail === 'string') return detail
+  }
+  return undefined
 }

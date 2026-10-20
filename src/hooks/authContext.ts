@@ -1,8 +1,8 @@
-import type { User } from '@local/types/user'
+import type { UserProfileOut } from '@local/api'
 import { useRouterState } from '@tanstack/react-router'
 
 export interface AuthState {
-  user: User | null
+  user: UserProfileOut | null
   loading: boolean
 }
 
@@ -21,6 +21,6 @@ export function useAuth(): AuthState {
 }
 
 /** Check if user has a specific named permission. */
-export function hasPermission(user: User | null, permission: string): boolean {
+export function hasPermission(user: UserProfileOut | null, permission: string): boolean {
   return user?.permissions?.includes(permission) ?? false
 }

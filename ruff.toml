@@ -1,0 +1,10 @@
+# Config for hand-written code (api/, App.py, scripts/).
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "RUF", "EXE"]
+ignore = ["E501", "B008", "BLE001", "B904"]
+
+[lint.isort]
+known-first-party = ["api", "App"]

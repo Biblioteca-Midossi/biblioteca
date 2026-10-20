@@ -1,25 +1,18 @@
-import { api } from '@local/hooks/api'
-import type { User } from '@local/types/user'
+import type { UpdateUserData, UserListItem } from '@local/api'
+import { usersApi } from '@local/hooks/api'
 import { notifications } from '@mantine/notifications'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 
-interface FetchUsersResponse {
-  users: Array<User>
-  total: number
-}
-
 export function useUserlist(page: number, rowsPerPage: number) {
-  const [users, setUsers] = useState<Array<User>>([])
+  const [users, setUsers] = useState<Array<UserListItem>>([])
   const [loading, setLoading] = useState(true)
   const [totalUsers, setTotalUsers] = useState(0)
 
   async function fetchUsers() {
     try {
       setLoading(true)
-      const response = await api.get<FetchUsersResponse>(
-        `/users/get-users?offset=${page * rowsPerPage}&limit=${rowsPerPage}`
-      )
+      const response = await usersApi.getUsers(page * rowsPerPage, rowsPerPage)
       setUsers(response.data.users)
       setTotalUsers(response.data.total)
     } catch (error) {
@@ -41,18 +34,12 @@ export function useUserlist(page: number, rowsPerPage: number) {
   return { users, loading, totalUsers, refetch: fetchUsers }
 }
 
-interface UpdateUserResponse {
-  message: string
-}
-
 export async function updateUser(
   userId: number,
-  userData: User
+  userData: UpdateUserData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await api.put<UpdateUserResponse>(`/users/update-user/${userId}`, {
-      user_data: userData,
-    })
+    const response = await usersApi.updateUser(userId, { user_data: userData })
 
     if (response.status === 200) {
       notifications.show({

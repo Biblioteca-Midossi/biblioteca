@@ -1,4 +1,4 @@
-import { api } from '@local/hooks/api'
+import { authApi } from '@local/hooks/api'
 import { useAuth } from '@local/hooks/authContext'
 import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
@@ -34,9 +34,9 @@ function Login() {
 
   async function handleSubmit(values: { username: string; password: string }) {
     try {
-      await api.post('/auth/login', { login: values.username, password: values.password })
+      await authApi.login({ login: values.username, password: values.password })
       navigate({ to: '/' })
-    } catch (_error) {
+    } catch {
       notifications.show({
         title: 'Errore di accesso',
         message: 'Credenziali non valide. Riprova.',

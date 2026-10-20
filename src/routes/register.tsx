@@ -1,5 +1,6 @@
+import { Istituto } from '@local/api'
 import { useRegister } from '@local/hooks/useRegister'
-import { Button, Container, Paper, Stack, TextInput, Title } from '@mantine/core'
+import { Button, Container, Paper, Select, Stack, TextInput, Title } from '@mantine/core'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/register')({
@@ -25,7 +26,12 @@ function Register() {
               type="password"
               {...form.getInputProps('password')}
             />
-            <TextInput required label="Istituto" {...form.getInputProps('istituto')} />
+            <Select
+              required
+              label="Istituto"
+              data={Object.values(Istituto)}
+              {...form.getInputProps('istituto')}
+            />
             <Button type="submit" fullWidth>
               Registrati
             </Button>

@@ -1,9 +1,9 @@
 import { BookCard } from '@local/components/BookGrid/BookCard'
 import { BookGrid } from '@local/components/BookGrid/BookGrid'
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
+import type { BookListItem } from '@local/hooks/useBookStore'
 import useBookStore from '@local/hooks/useBookStore'
 import { getResponsiveCols } from '@local/styles/bookGridStyles'
-import type { Book } from '@local/types/book'
 import { Divider } from '@mantine/core'
 import { useEffect, useState } from 'react'
 
@@ -36,7 +36,7 @@ export function BookGridBase() {
         page={page}
         onPageChange={setPage}
         onSearch={handleSearch}
-        renderBookCard={(book: Partial<Book>) => <BookCard book={book} />}
+        renderBookCard={(book: Partial<BookListItem>) => <BookCard book={book} />}
       />
       <Divider className="w-4/5 m-auto" />
     </>

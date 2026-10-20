@@ -1,6 +1,6 @@
 import { Header } from '@local/components/Drawer/Header'
 import { LoadingScreen } from '@local/components/LoadingScreen'
-import { api, setActiveSession } from '@local/hooks/api'
+import { setActiveSession, usersApi } from '@local/hooks/api'
 import type { AuthState } from '@local/hooks/authContext'
 import { NotFoundPage } from '@local/routes/-404'
 import { ErrorPage } from '@local/routes/-error'
@@ -33,8 +33,7 @@ export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
 
   beforeLoad: async () => {
     try {
-      const { data } = await api.get('/users/me')
-      console.debug(data)
+      const { data } = await usersApi.getProfile()
       setActiveSession(true)
       return { auth: { user: data, loading: false } }
     } catch {

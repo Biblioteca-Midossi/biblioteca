@@ -62,19 +62,21 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
   }
 
   async function handleSubmit(values: BookFormValues) {
-    const success = await addBook({
-      istituto: values.istituto,
-      scaffale: values.scaffale,
-      nomeAutore: values.nomeAutore ? [values.nomeAutore] : [],
-      cognomeAutore: values.cognomeAutore ? [values.cognomeAutore] : [],
-      isbn: values.isbn,
-      titolo: values.titolo,
-      genere: values.genere ? [values.genere] : [],
-      quantita: values.quantita,
-      casaEditrice: values.casaEditrice,
-      descrizione: values.descrizione,
-      copertina: values.copertina,
-    })
+    const success = await addBook(
+      {
+        isbn: values.isbn,
+        titolo: values.titolo,
+        genere: values.genere ? [values.genere] : [],
+        quantita: Number(values.quantita),
+        casaEditrice: values.casaEditrice,
+        descrizione: values.descrizione,
+        istituto: values.istituto,
+        scaffale: values.scaffale,
+        nomeAutore: values.nomeAutore ? [values.nomeAutore] : [],
+        cognomeAutore: values.cognomeAutore ? [values.cognomeAutore] : [],
+      },
+      values.copertina
+    )
 
     if (success) {
       clearForm()

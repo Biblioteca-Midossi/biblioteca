@@ -10,16 +10,15 @@
     "duplicates:client": "bunx --bun jscpd src",
     "duplicates:server": "bunx --bun jscpd App.py api/ --min-tokens 100 --min-lines 10",
     "everything": "bun run lint && bun run typecheck && bun run fmt && bun run duplicates",
-    "fmt": "bunx --bun biome format --write && uvx ruff format",
+    "fmt": "bunx --bun biome format --write && uvx ruff format && uvx ruff format contracts_gen --config ruff.gen.toml",
     "ignore": "bunx --bun can-i-ignore-scripts",
-    "lint": "bunx --bun biome check --write && uvx ruff check",
+    "lint": "bunx --bun biome check --write && uvx ruff check && uvx ruff check contracts_gen --config ruff.gen.toml",
     "loc": "bunx --bun cloc src/ App.py api/ --include-ext=ts,tsx,py --by-file",
     "loc:client": "bunx --bun cloc src --include-ext=ts,tsx --by-file",
     "loc:sep": "bun run loc:client && bun run loc:server",
     "loc:server": "bunx --bun cloc App.py api/ --include-ext=py --by-file",
     "typecheck": "bunx --bun tsc --noEmit",
-    "openapi:export": "uv run python scripts/export_openapi.py",
-    "typesync": "bun run openapi:export && bunx --package @openapitools/openapi-generator-cli openapi-generator-cli generate -i openapi.json -g typescript-axios -o src/api && bunx --package @openapitools/openapi-generator-cli openapi-generator-cli generate -i openapi.json -g python-fastapi -o api_client"
+    "typesync": "bunx --package @openapitools/openapi-generator-cli openapi-generator-cli generate -i contracts/biblioteca.yaml -g typescript-axios -o src/api && uv run python scripts/postprocess-clients.py"
   },
   "dependencies": {
     "@biomejs/biome": "^2.5.15",

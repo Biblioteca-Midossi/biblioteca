@@ -32,26 +32,32 @@ For version control practices, see the `COMMIT.md` file.
 - List endpoints stay paginated; when a new tree or "everything" view appears, add a dedicated lightweight endpoint that returns only the fields the view renders instead of raising caps or looping pages client-side.
 - Fix ruff warnings before committing (`bun run lint`).
 - **No untyped dicts/lists**: every dict, list, or tuple that crosses a boundary (routes, services, models) has a named Pydantic model or `TypedDict`/`NamedTuple` — never a bare `dict[str, Any]`, `list[dict]`, or kwargs bag. `Any` is allowed only at true dynamic edges (e.g. raw DB rows before model validation), never inside business logic.
-- Keep Pydantic model configs consistent: `snake_case` for DB columns, `camelCase` for API responses (via `alias_generator=to_camel, populate_by_name=True`).
+- Internal Pydantic models keep `snake_case` fields; wire (API-visible) shapes use camelCase — hand-written row/service models stay snake_case, wire formats are declared in the contract and generated with camelCase aliases (`populate_by_name=True` so Python code uses snake_case).
 
-## Typesync (backend ↔ frontend)
+## Contract & Typesync (design-first)
 
-- API types are generated from the FastAPI OpenAPI schema — never hand-write request/response types in `src/types/` or duplicate models on the client.
-- Regenerate with `bun run typesync`, which runs `@openapitools/openapi-generator-cli` twice:
-  - `typescript-axios` → frontend client + types (the axios instance in `src/hooks/api.ts` is replaced by the generated client).
-  - `python-fastapi` → backend client models (for any backend-to-backend calls/tests).
-- The backend is the single source of truth: change the Pydantic model, regenerate, then adapt the frontend. Never edit generated files by hand.
+- `contracts/biblioteca.yaml` is the **single source of truth** for the API. Every endpoint change starts there: edit the YAML (paths, schemas, `operationId` in camelCase, domain tags), then regenerate, then implement/adapt.
+- `bun run typesync` regenerates both artifacts from the contract — never edit generated files by hand:
+  - `src/api/` — `typescript-axios` client used by the frontend.
+  - `contracts_gen/biblioteca_api/` — `python-fastapi` server skeleton: routers (`apis/`) + Pydantic models (`models/`). `contracts_gen/` is gitignored; regenerate after cloning or after any contract change.
+- Generated sources are **never committed** (`.gitignore` covers `src/api/` and `contracts_gen/`), mirroring rideup's `target/generated-sources/` rule.
+- Server implementation lives in `api/impl/`: one class per generated interface implementing the generated `Base*Api` (e.g. `BooksImpl(BaseBooksApi)`). Generated routers own the HTTP shape (paths, status codes, response models); impls own business logic and must not re-declare paths or status codes.
+- The frontend calls the API **only** through the generated client classes (`authApi`, `booksApi`, `usersApi` from `@local/hooks/api`). Hand-written URL strings like `api.get('/books/...')` are forbidden — the generated methods are the path constants. Raw axios/`fetch` calls outside the generated client are forbidden.
+- Transport types come from the generated code (`BookResponse`, `UserProfileOut`, ...). Components needing extra view state (e.g. a `File` before upload) define a named view-model type derived from the generated one (`Omit`/extends), never a parallel hand-written duplicate.
 
 ## Backend structure
 
 The backend is a single FastAPI app; `App.py` is the entrypoint (mounts the API under `/api`, static files, SPA fallback):
 
-- `api/routes/` — one module per resource; each exposes an `APIRouter` named `router` and is registered automatically.
-- `api/models/` — Pydantic request/response/row models.
+- `contracts/biblioteca.yaml` — API contract (source of truth; see Contract & Typesync).
+- `contracts_gen/biblioteca_api/` — generated routers + models (never edited, never committed).
+- `api/impl/` — one class per generated interface implementing `Base*Api`; business logic and permission checks live here.
+- `api/models/` — hand-written internal models (DB row shapes via `db.fetchall_as`, service payloads). Wire formats visible to the API live in the contract; row models mirror DB columns in snake_case.
 - `api/services/` — reusable database, file, and domain operations.
 - `api/auth/` — AuthX JWT cookie configuration and helpers.
 - `api/lib/` — config, database pool, logging.
 - DB schema changes go in idempotent SQL files under `dbinit/`; never edit or patch the schema from application code.
+- Lint config: `ruff.toml` (hand-written code), `ruff.gen.toml` (generated code — relaxed, don't fight the generator).
 
 ## Process
 

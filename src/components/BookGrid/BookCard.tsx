@@ -1,13 +1,13 @@
-import type { Book } from '@local/types/book'
+import type { BookListItem } from '@local/hooks/useBookStore'
 import { ActionIcon, Box, Card, Image, Text } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 import type { MouseEvent } from 'react'
 
 interface BookCardProps {
-  book: Partial<Book>
+  book: Partial<BookListItem>
   showId?: boolean
-  onMenuOpen?: (event: MouseEvent<HTMLButtonElement>, book: Partial<Book>) => void
+  onMenuOpen?: (event: MouseEvent<HTMLButtonElement>, book: Partial<BookListItem>) => void
 }
 
 export function BookCard({ book, showId, onMenuOpen }: BookCardProps) {

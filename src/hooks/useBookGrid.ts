@@ -1,6 +1,6 @@
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
+import type { BookListItem } from '@local/hooks/useBookStore'
 import useBookStore from '@local/hooks/useBookStore'
-import type { Book } from '@local/types/book'
 import { useEffect, useMemo, useState } from 'react'
 
 export const useBookGrid = () => {
@@ -8,7 +8,7 @@ export const useBookGrid = () => {
     useBookStore()
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-  const [selectedBook, setSelectedBook] = useState<Partial<Book> | null>(null)
+  const [selectedBook, setSelectedBook] = useState<Partial<BookListItem> | null>(null)
 
   const currentBreakpoint = getBreakpoints()
   const [searchQuery, setSearchQuery] = useState<string>('')

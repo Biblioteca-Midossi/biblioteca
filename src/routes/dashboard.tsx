@@ -1,11 +1,10 @@
+import type { RecentBookResponse, UserListItem } from '@local/api'
 import { BookGridDashboard } from '@local/components/BookGrid/BookGridDashboard'
 import { openBookAddModal } from '@local/components/BookInputForm'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { StatCard } from '@local/components/StatCard'
 import { UserCard } from '@local/components/UserCard'
-import { api } from '@local/hooks/api'
-import type { Book } from '@local/types/book'
-import type { User } from '@local/types/user'
+import { booksApi, usersApi } from '@local/hooks/api'
 import {
   Alert,
   Box,
@@ -33,8 +32,8 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function Dashboard() {
-  const [recentBooks, setRecentBooks] = useState<Array<Partial<Book>>>([])
-  const [newUsers, setNewUsers] = useState<Array<Partial<User>>>([])
+  const [recentBooks, setRecentBooks] = useState<Array<RecentBookResponse>>([])
+  const [newUsers, setNewUsers] = useState<Array<UserListItem>>([])
   const [stats] = useState({ total_books: 0, total_users: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -45,8 +44,8 @@ function Dashboard() {
       setError(null)
       try {
         const [booksRes, usersRes] = await Promise.all([
-          api.get('/books/recent?limit=5'),
-          api.get('/users/recent?limit=5'),
+          booksApi.getRecentBooks(5),
+          usersApi.getRecentUsers(5),
         ])
 
         setRecentBooks(booksRes.data?.books || [])

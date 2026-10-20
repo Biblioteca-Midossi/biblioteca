@@ -1,12 +1,8 @@
+import { AuthApi, BooksApi, UsersApi } from '@local/api'
 import axios, { type AxiosRequestConfig } from 'axios'
 
 axios.defaults.withCredentials = true
 axios.defaults.headers.post['Content-Type'] = 'application/json'
-
-export const api = axios.create({
-  baseURL: `/api`,
-  withCredentials: true,
-})
 
 let logoutCallback: (() => Promise<void>) | null = null
 let activeSession = false
@@ -29,15 +25,23 @@ declare module 'axios' {
   }
 }
 
-api.interceptors.response.use(
+/**
+ * Shared generated API clients. They use the global axios instance, so the
+ * 401 interceptor below covers every generated call.
+ */
+export const authApi = new AuthApi()
+export const booksApi = new BooksApi()
+export const usersApi = new UsersApi()
+
+axios.interceptors.response.use(
   (res) => res,
   async (err) => {
     const config: AxiosRequestConfig | undefined = err.config
     if (err.response?.status === 401 && config && !config._retry && !config._skipAuthRefresh) {
       config._retry = true
       try {
-        await api.post('/auth/refresh', undefined, { _skipAuthRefresh: true })
-        return api(config)
+        await authApi.refresh({ _skipAuthRefresh: true })
+        return axios.request(config)
       } catch {
         if (activeSession) {
           activeSession = false

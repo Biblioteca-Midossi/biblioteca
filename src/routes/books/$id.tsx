@@ -42,7 +42,7 @@ function BookPage() {
           <Box className="flex flex-col justify-start">
             <Title order={2}>{singleBook.titolo}</Title>
             <Text size="lg" c="dimmed">
-              by {singleBook.autori ?? 'Autore Sconosciuto'}
+              by {(singleBook.autori ?? []).join(', ') || 'Autore Sconosciuto'}
             </Text>
             <Divider my="lg" />
             <Text>{singleBook.descrizione}</Text>

@@ -1,3 +1,4 @@
+import type { Istituto } from '@local/api'
 import { register } from '@local/hooks/auth'
 import { useAuth } from '@local/hooks/authContext'
 import { Button, Group, Text } from '@mantine/core'
@@ -48,11 +49,11 @@ export function useRegister() {
 
   const handleSubmit = form.onSubmit(async (values) => {
     try {
-      const result = await register(values)
+      const result = await register({ ...values, istituto: values.istituto as Istituto })
       if (result.includes('successful-request')) {
         navigate({ to: '/login' })
       }
-    } catch (_error) {
+    } catch {
       /* handled by auth.ts notification */
     }
   })

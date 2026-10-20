@@ -1,10 +1,21 @@
+import sys
+from pathlib import Path
+
+# Generated server package (contracts_gen/biblioteca_api) is not installed;
+# make it importable when running from the repo root.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "contracts_gen"))
+
+from biblioteca_api.apis.auth_api import router as auth_router
+from biblioteca_api.apis.books_api import router as books_router
+from biblioteca_api.apis.roles_api import router as roles_router
+from biblioteca_api.apis.users_api import router as users_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 
 from api.auth import auth
-from api.routes import register_routes
+from api.impl import install_request_context_middleware
 
 biblioteca = FastAPI()
 
@@ -25,7 +36,12 @@ api = FastAPI(
 )
 
 auth.handle_errors(api)
-register_routes(api)
+
+install_request_context_middleware(api.add_middleware)
+api.include_router(auth_router)
+api.include_router(books_router)
+api.include_router(users_router)
+api.include_router(roles_router)
 
 api.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

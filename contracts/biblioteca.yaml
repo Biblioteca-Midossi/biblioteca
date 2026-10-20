@@ -1,0 +1,919 @@
+openapi: 3.1.0
+info:
+  title: Biblioteca API
+  description: 'Biblioteca Midossi API contract. Source of truth: edit this file,
+    never the generated clients.'
+  version: 0.1.0
+paths:
+  /auth/register:
+    post:
+      tags:
+      - auth
+      summary: Register
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /auth/login:
+    post:
+      tags:
+      - auth
+      summary: Login
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /auth/refresh:
+    post:
+      tags:
+      - auth
+      summary: Refresh
+      operationId: refresh
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Logout
+      operationId: logout
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /books/:
+    get:
+      tags:
+      - books
+      summary: Get Books
+      operationId: getBooks
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+          title: Page
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 12
+          title: Limit
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BooksListResponse'
+        '404':
+          description: Not found
+    post:
+      tags:
+      - books
+      summary: Create Book
+      operationId: createBook
+      security:
+      - AuthXAccessCookie: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateBookForm'
+      responses:
+        '200':
+          description: Book created (or inventory incremented when the ISBN already
+            exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /books/recent:
+    get:
+      tags:
+      - books
+      summary: Get Recent Books
+      description: 'Return the most recently added books by picking the highest id_libro
+        values.
+
+        The result is ordered by id_libro desc and limited by `limit`.'
+      operationId: getRecentBooks
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 5
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecentBooksListResponse'
+        '404':
+          description: Not found
+  /books/{book_id}:
+    get:
+      tags:
+      - books
+      summary: Get Book
+      operationId: getBook
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetailResponse'
+        '404':
+          description: Not found
+    put:
+      tags:
+      - books
+      summary: Update Book
+      operationId: updateBook
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateBookForm'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+    delete:
+      tags:
+      - books
+      summary: Delete Book
+      operationId: deleteBook
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: book_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Book Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+  /roles/:
+    get:
+      tags:
+      - roles
+      summary: List Roles
+      description: List all roles with their permissions. Requires view_users permission.
+      operationId: listRoles
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RoleOut'
+                type: array
+                title: Response List Roles Roles  Get
+        '404':
+          description: Not found
+      security:
+      - AuthXAccessCookie: []
+  /users/me:
+    get:
+      tags:
+      - users
+      summary: Get Profile
+      operationId: getProfile
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileOut'
+        '404':
+          description: Not found
+      security:
+      - AuthXAccessCookie: []
+    put:
+      tags:
+      - users
+      summary: Update Profile
+      operationId: updateProfile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileForm'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+      security:
+      - AuthXAccessCookie: []
+  /users/get-users:
+    get:
+      tags:
+      - users
+      summary: Get Users
+      operationId: getUsers
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 10
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersListResponse'
+        '404':
+          description: Not found
+  /users/recent:
+    get:
+      tags:
+      - users
+      summary: Get Recent Users
+      operationId: getRecentUsers
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 5
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersRecentListResponse'
+        '404':
+          description: Not found
+  /users/update-user/{user_id}:
+    put:
+      tags:
+      - users
+      summary: Update User
+      operationId: updateUser
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+components:
+  schemas:
+    BookDetailResponse:
+      properties:
+        book:
+          $ref: '#/components/schemas/BookResponse'
+      type: object
+      required:
+      - book
+      title: BookDetailResponse
+    BookResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        titolo:
+          type: string
+          title: Titolo
+        autori:
+          items:
+            type: string
+          type: array
+          title: Autori
+        coverUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverurl
+        isbn:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Isbn
+        genere:
+          items:
+            type: string
+          type: array
+          title: Genere
+          default: []
+        quantita:
+          type: integer
+          title: Quantita
+        casaEditrice:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Casaeditrice
+        descrizione:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descrizione
+        istituto:
+          anyOf:
+          - $ref: '#/components/schemas/Istituto'
+          - type: 'null'
+        scaffale:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scaffale
+      type: object
+      required:
+      - id
+      - titolo
+      - autori
+      - quantita
+      title: BookResponse
+    BooksListResponse:
+      properties:
+        books:
+          items:
+            $ref: '#/components/schemas/BookResponse'
+          type: array
+          title: Books
+        maxpage:
+          type: integer
+          title: Maxpage
+      type: object
+      required:
+      - books
+      - maxpage
+      title: BooksListResponse
+    Istituto:
+      type: string
+      enum:
+      - EXT
+      - ITT
+      - LAC
+      - LAV
+      title: Istituto
+    LoginRequest:
+      properties:
+        login:
+          type: string
+          title: Login
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+      - login
+      - password
+      title: LoginRequest
+    MessageResponse:
+      properties:
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - message
+      title: MessageResponse
+    RecentBookResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        titolo:
+          type: string
+          title: Titolo
+        autori:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Autori
+        coverUrl:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Coverurl
+        isbn:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Isbn
+        quantita:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Quantita
+        casaEditrice:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Casaeditrice
+      type: object
+      required:
+      - id
+      - titolo
+      title: RecentBookResponse
+    RecentBooksListResponse:
+      properties:
+        books:
+          items:
+            $ref: '#/components/schemas/RecentBookResponse'
+          type: array
+          title: Books
+      type: object
+      required:
+      - books
+      title: RecentBooksListResponse
+    RegisterRequest:
+      properties:
+        nome:
+          type: string
+          title: Nome
+        cognome:
+          type: string
+          title: Cognome
+        username:
+          type: string
+          title: Username
+        email:
+          type: string
+          format: email
+          title: Email
+        password:
+          type: string
+          title: Password
+        istituto:
+          $ref: '#/components/schemas/Istituto'
+      type: object
+      required:
+      - nome
+      - cognome
+      - username
+      - email
+      - password
+      - istituto
+      title: RegisterRequest
+    RoleOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        display_name:
+          type: string
+          title: Display Name
+        position:
+          type: integer
+          title: Position
+        color:
+          type: string
+          title: Color
+        permissions:
+          items:
+            type: string
+          type: array
+          title: Permissions
+          default: []
+      type: object
+      required:
+      - id
+      - name
+      - display_name
+      - position
+      - color
+      title: RoleOut
+    UserListItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        nome:
+          type: string
+          title: Nome
+        cognome:
+          type: string
+          title: Cognome
+        username:
+          type: string
+          title: Username
+        roleId:
+          type: integer
+          title: Roleid
+        roleName:
+          type: string
+          title: Rolename
+          default: ''
+        istituto:
+          anyOf:
+          - $ref: '#/components/schemas/Istituto'
+          - type: 'null'
+        email:
+          type: string
+          title: Email
+      type: object
+      required:
+      - id
+      - nome
+      - cognome
+      - username
+      - roleId
+      - email
+      title: UserListItem
+    UserProfileOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        username:
+          type: string
+          title: Username
+        email:
+          type: string
+          title: Email
+        nome:
+          type: string
+          title: Nome
+        cognome:
+          type: string
+          title: Cognome
+        istituto:
+          anyOf:
+          - $ref: '#/components/schemas/Istituto'
+          - type: 'null'
+        roleId:
+          type: integer
+          title: Roleid
+        roleName:
+          type: string
+          title: Rolename
+          default: ''
+        permissions:
+          items:
+            type: string
+          type: array
+          title: Permissions
+          default: []
+        bio:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bio
+        profilePicture:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Profilepicture
+        lastLogin:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Lastlogin
+      type: object
+      required:
+      - id
+      - username
+      - email
+      - nome
+      - cognome
+      - roleId
+      title: UserProfileOut
+    UserProfileUpdate:
+      properties:
+        nome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Nome
+        cognome:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cognome
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+        bio:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bio
+        istituto:
+          anyOf:
+          - $ref: '#/components/schemas/Istituto'
+          - type: 'null'
+      type: object
+      required:
+      - nome
+      - cognome
+      - email
+      - bio
+      - istituto
+      title: UserProfileUpdate
+    UsersListResponse:
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/UserListItem'
+          type: array
+          title: Users
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - users
+      - total
+      title: UsersListResponse
+    UsersRecentListResponse:
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/UserListItem'
+          type: array
+          title: Users
+      type: object
+      required:
+      - users
+      title: UsersRecentListResponse
+    CreateBookForm:
+      type: object
+      title: CreateBookForm
+      properties:
+        data:
+          type: string
+          title: Data
+          description: JSON string matching CreateBookPayload
+        thumbnail:
+          type: string
+          format: binary
+          title: Thumbnail
+      required:
+      - data
+    UpdateBookForm:
+      type: object
+      title: UpdateBookForm
+      properties:
+        updatedBook:
+          type: string
+          title: UpdatedBook
+          description: JSON string matching UpdateBookPayload
+        file:
+          type: string
+          format: binary
+          title: File
+    UpdateProfileForm:
+      type: object
+      title: UpdateProfileForm
+      properties:
+        profile_update:
+          $ref: '#/components/schemas/UserProfileUpdate'
+        file:
+          type: string
+          format: binary
+          title: File
+    CreateBookPayload:
+      type: object
+      title: CreateBookPayload
+      properties:
+        isbn:
+          type: string
+        titolo:
+          type: string
+        genere:
+          oneOf:
+          - type: array
+            items:
+              type: string
+          - type: string
+        quantita:
+          type: integer
+        casaEditrice:
+          type: string
+        descrizione:
+          type: string
+        istituto:
+          type: string
+        scaffale:
+          type: string
+        nomeAutore:
+          type: array
+          items:
+            type: string
+        cognomeAutore:
+          type: array
+          items:
+            type: string
+      required:
+      - isbn
+      - titolo
+      - genere
+      - quantita
+      - casaEditrice
+      - descrizione
+      - istituto
+      - scaffale
+      - nomeAutore
+      - cognomeAutore
+    UpdateBookPayload:
+      type: object
+      title: UpdateBookPayload
+      properties:
+        isbn:
+          type: string
+        titolo:
+          type: string
+        genere:
+          oneOf:
+          - type: array
+            items:
+              type: string
+          - type: string
+        quantita:
+          type: integer
+        casaEditrice:
+          type: string
+        descrizione:
+          type: string
+        nomeAutore:
+          type: array
+          items:
+            type: string
+        cognomeAutore:
+          type: array
+          items:
+            type: string
+    UpdateUserData:
+      type: object
+      title: UpdateUserData
+      properties:
+        nome:
+          type: string
+        cognome:
+          type: string
+        username:
+          type: string
+        ruolo:
+          type: integer
+        email:
+          type: string
+    UpdateUserRequest:
+      type: object
+      title: UpdateUserRequest
+      properties:
+        user_data:
+          $ref: '#/components/schemas/UpdateUserData'
+      required:
+      - user_data
+  securitySchemes:
+    AuthXAccessCookie:
+      type: apiKey
+      description: Provide an AuthX access token in this cookie.
+      in: cookie
+      name: access_token
+servers:
+- url: /api
+tags:
+- name: auth
+  description: Registration, login, refresh, logout
+- name: books
+  description: Catalogue browsing and management
+- name: roles
+  description: Role and permission listing
+- name: users
+  description: Profiles and user management

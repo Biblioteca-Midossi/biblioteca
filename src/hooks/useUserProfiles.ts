@@ -1,10 +1,10 @@
-import { api } from '@local/hooks/api'
-import type { User } from '@local/types/user'
+import type { UserProfileOut } from '@local/api'
+import { usersApi } from '@local/hooks/api'
 import { notifications } from '@mantine/notifications'
 
-export async function fetchUserMe(): Promise<User> {
+export async function fetchUserMe(): Promise<UserProfileOut> {
   try {
-    const response = await api.get('/users/me')
+    const response = await usersApi.getProfile()
     return response.data
   } catch (error) {
     console.error('Error fetching user profile:', error)

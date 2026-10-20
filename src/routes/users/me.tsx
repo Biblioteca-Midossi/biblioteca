@@ -1,6 +1,6 @@
+import { Istituto } from '@local/api'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { useAuth } from '@local/hooks/authContext'
-import { IstitutoEnum } from '@local/types/user'
 import { Avatar, Badge, Card, Container, Divider, Grid, Group, Text, Title } from '@mantine/core'
 import { IconBriefcase, IconMail } from '@tabler/icons-react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
@@ -53,7 +53,8 @@ function SelfUserPage() {
         <Title order={4}>Institution Details</Title>
         <Text size="sm">
           Istituto:{' '}
-          {user.istituto in IstitutoEnum ? IstitutoEnum[user.istituto] : 'Non specificato'}
+          {user.istituto &&
+            (Object.values(Istituto).includes(user.istituto) ? user.istituto : 'Non specificato')}
         </Text>
       </Card>
     </Container>

@@ -3,7 +3,7 @@ import '@mantine/core/styles.layer.css'
 import '@mantine/notifications/styles.layer.css'
 import 'mantine-datatable/styles.layer.css'
 import '@fontsource/varela-round/400.css'
-import { api, setLogoutCallback } from '@local/hooks/api'
+import { authApi, setLogoutCallback } from '@local/hooks/api'
 import { defaultAuthState } from '@local/hooks/authContext'
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
@@ -20,7 +20,7 @@ const router = createRouter({
 })
 
 setLogoutCallback(async () => {
-  await api.post('/auth/logout').catch((err) => {
+  await authApi.logout().catch((err) => {
     console.log('setLogoutCallback error:', err)
   })
   router.invalidate()

@@ -1,6 +1,6 @@
+import type { UpdateUserData, UserListItem } from '@local/api'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { updateUser, useUserlist } from '@local/hooks/useUserlist'
-import type { User } from '@local/types/user'
 import { Box, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
@@ -37,7 +37,7 @@ function useRoles() {
 }
 
 interface EditUserFormProps {
-  user: User
+  user: UserListItem
   onSaved: () => void
 }
 
@@ -54,7 +54,12 @@ function EditUserForm({ user, onSaved }: EditUserFormProps) {
   })
 
   async function handleSave() {
-    const updatedUser = { ...user, ruolo: Number(form.values.ruolo) }
+    const updatedUser: UpdateUserData = {
+      nome: form.values.nome,
+      cognome: form.values.cognome,
+      email: form.values.email,
+      ruolo: Number(form.values.ruolo),
+    }
     const result = await updateUser(user.id, updatedUser)
     if (result.success) {
       modals.closeAll()
@@ -91,7 +96,7 @@ function UserList() {
 
   const { users, loading, totalUsers, refetch } = useUserlist(page - 1, rowsPerPage)
 
-  function handleEdit(user: User) {
+  function handleEdit(user: UserListItem) {
     modals.open({
       title: (
         <Text>
@@ -108,19 +113,19 @@ function UserList() {
     {
       accessor: 'nome',
       title: 'Name',
-      render: (user: User) => `${user.nome} ${user.cognome}`,
+      render: (user: UserListItem) => `${user.nome} ${user.cognome}`,
     },
     { accessor: 'username', title: 'Username' },
     { accessor: 'email', title: 'Email' },
     {
       accessor: 'roleName',
       title: 'Role',
-      render: (user: User) => user.roleName,
+      render: (user: UserListItem) => user.roleName,
     },
     {
       accessor: 'actions',
       title: 'Actions',
-      render: (user: User) => (
+      render: (user: UserListItem) => (
         <Button variant="outline" size="xs" onClick={() => handleEdit(user)}>
           Edit
         </Button>

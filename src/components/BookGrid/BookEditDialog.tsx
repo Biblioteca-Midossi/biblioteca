@@ -1,4 +1,4 @@
-import type { Book } from '@local/types/book'
+import type { BookListItem } from '@local/hooks/useBookStore'
 import { Box, Button, Group, Image, SimpleGrid, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
@@ -21,7 +21,7 @@ export interface EditBookFormValues {
 }
 
 interface BookEditFormContentProps {
-  book: Partial<Book> | null
+  book: Partial<BookListItem> | null
   onClose: () => void
   onSubmit: (values: EditBookFormValues) => Promise<void>
 }
@@ -48,16 +48,16 @@ function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentPro
     if (book) {
       form.setValues({
         titolo: book.titolo || '',
-        nomeAutore: book.nomeAutore?.join(', ') || '',
-        cognomeAutore: book.cognomeAutore?.join(', ') || '',
+        nomeAutore: '',
+        cognomeAutore: '',
         isbn: book.isbn || '',
         genere: book.genere?.join(', ') || '',
-        quantita: book.quantita || '',
+        quantita: String(book.quantita ?? ''),
         casaEditrice: book.casaEditrice || '',
         istituto: book.istituto || '',
         scaffale: book.scaffale || '',
         descrizione: book.descrizione || '',
-        copertina: book.copertina || null,
+        copertina: null,
         coverUrl: book.coverUrl || '',
       })
     }
@@ -110,7 +110,7 @@ function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentPro
 }
 
 export function openBookEditModal(
-  book: Partial<Book> | null,
+  book: Partial<BookListItem> | null,
   onSubmit: (values: EditBookFormValues) => Promise<void>
 ) {
   const modalId = modals.open({

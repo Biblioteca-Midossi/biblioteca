@@ -1,17 +1,17 @@
 import { SearchBar } from '@local/components/SearchBar'
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
+import type { BookListItem } from '@local/hooks/useBookStore'
 import { getResponsivePadding } from '@local/styles/bookGridStyles'
-import type { Book } from '@local/types/book'
 import { Group, Pagination, SimpleGrid, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 
 interface BookGridProps {
-  books: Array<Partial<Book>> | string
+  books: Array<Partial<BookListItem>> | string
   maxpage: number
   page: number
   onPageChange: (page: number) => void
   onSearch: (query: string) => void
-  renderBookCard: (book: Partial<Book>) => ReactNode
+  renderBookCard: (book: Partial<BookListItem>) => ReactNode
 }
 
 export function BookGrid({

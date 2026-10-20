@@ -1,0 +1,7 @@
+# Relaxed config for generated code (contracts_gen/): never hand-edit it.
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F"]
+ignore = ["E501", "F401", "F811", "F841"]

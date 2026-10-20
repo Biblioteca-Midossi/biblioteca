@@ -25,7 +25,7 @@ export function ProtectedPage({ permissions, requireAuth = true, children }: Pro
     }
 
     if (user && permissions && permissions.length > 0) {
-      const hasAny = permissions.some((p) => user.permissions.includes(p))
+      const hasAny = permissions.some((p) => user.permissions?.includes(p))
       if (!hasAny) {
         navigate({ to: '/' })
       }

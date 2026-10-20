@@ -32,7 +32,7 @@ export function CustomDrawer({ opened, onClose }: CustomDrawerProps) {
           <Text>{pathname.endsWith('/') ? 'Home' : 'Torna alla Home'}</Text>
         </UnstyledButton>
         <Divider />
-        {user?.permissions.includes('view_dashboard') && (
+        {user?.permissions?.includes('view_dashboard') && (
           <UnstyledButton
             p="sm"
             onClick={() => {

@@ -1,20 +1,30 @@
-import { api } from '@local/hooks/api'
-import type { Book } from '@local/types/book'
+import type { BookResponse, CreateBookPayload, UpdateBookPayload } from '@local/api'
+import { booksApi } from '@local/hooks/api'
 import { notifications } from '@mantine/notifications'
 import { create } from 'zustand'
 
+/** Store-level book view: BookResponse with `autori` flattened to a display string and the File kept for edit flows. */
+export interface BookListItem extends Omit<BookResponse, 'autori'> {
+  autori: string
+  copertina: File | null
+}
+
 interface BookState {
-  books: Array<Book> | string
-  singleBook: Partial<Book> | string
+  books: Array<BookListItem> | string
+  singleBook: BookResponse | string
   maxpage: number
   isLoading: boolean
 
   // Actions
   fetchBooks: (page: number, limit: number, searchQuery?: string) => Promise<undefined | string>
   fetchSingleBook: (bookId: number) => Promise<undefined | string>
-  addBook: (book: Partial<Book>) => Promise<boolean>
-  editBook: (book: Partial<Book>) => Promise<boolean>
+  addBook: (book: CreateBookPayload, thumbnail?: File | null) => Promise<boolean>
+  editBook: (bookId: number, book: UpdateBookPayload, file?: File | null) => Promise<boolean>
   deleteBook: (bookId: number) => Promise<void>
+}
+
+function formatErrorMessage(data: unknown, fallback: string): string {
+  return typeof data === 'string' ? data : fallback
 }
 
 const useBookStore = create<BookState>((_set, _get) => {
@@ -26,18 +36,14 @@ const useBookStore = create<BookState>((_set, _get) => {
 
     fetchBooks: async (page: number, limit: number, searchQuery?: string) => {
       _set({ isLoading: true })
-      let url = `/books?page=${page}&limit=${limit}`
-      if (searchQuery) {
-        url += `&search=${searchQuery}`
-      }
 
       try {
-        const response = await api.get(url)
+        const response = await booksApi.getBooks(page, limit, searchQuery ?? null)
         if (response.status === 200) {
-          const formattedBooks = response.data.books.map((book: Book) => ({
+          const formattedBooks: Array<BookListItem> = response.data.books.map((book) => ({
             ...book,
             autori: book.autori.join(', '),
-            coverUrl: `${book.coverUrl}`,
+            copertina: null,
           }))
           _set({ books: formattedBooks, maxpage: response.data.maxpage })
         } else if (response.status === 204) {
@@ -68,7 +74,7 @@ const useBookStore = create<BookState>((_set, _get) => {
       }
       _set({ isLoading: true })
       try {
-        const response = await api.get(`/books/${bookId}`)
+        const response = await booksApi.getBook(bookId)
         if (response.status === 200) {
           _set({ singleBook: { ...response.data.book } })
         } else {
@@ -87,25 +93,9 @@ const useBookStore = create<BookState>((_set, _get) => {
       }
     },
 
-    addBook: async (book: Partial<Book>) => {
-      const book_obj = {
-        ...book,
-        copertina: null,
-      }
-
-      const formData = new FormData()
-      formData.append('data', JSON.stringify(book_obj))
-
-      if (book.copertina) {
-        formData.append('thumbnail', book.copertina)
-      }
-
+    addBook: async (book: CreateBookPayload, thumbnail?: File | null) => {
       try {
-        const response = await api.post('/books', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
+        const response = await booksApi.createBook(JSON.stringify(book), thumbnail ?? undefined)
 
         if (response.status === 201) {
           notifications.show({
@@ -114,24 +104,10 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'green',
           })
           return true
-        } else if (response.status === 400) {
-          notifications.show({
-            title: 'Errore client',
-            message: response.data,
-            color: 'red',
-          })
-          return false
-        } else if (response.status === 500) {
-          notifications.show({
-            title: 'Errore server',
-            message: response.data,
-            color: 'red',
-          })
-          return false
         } else {
           notifications.show({
-            title: 'Errore sconosciuto',
-            message: response.data,
+            title: 'Errore client',
+            message: formatErrorMessage(response.data, 'Errore sconosciuto'),
             color: 'red',
           })
           return false
@@ -146,36 +122,36 @@ const useBookStore = create<BookState>((_set, _get) => {
       }
     },
 
-    editBook: async (updatedBook: Partial<Book>) => {
-      const formData = new FormData()
-      formData.append(
-        'updatedBook',
-        JSON.stringify({
-          ...updatedBook,
-          copertina: null,
-          coverUrl: null,
-        })
-      )
-
-      if (updatedBook.copertina) {
-        formData.append('file', updatedBook.copertina)
-      }
-
+    editBook: async (bookId: number, book: UpdateBookPayload, file?: File | null) => {
       try {
-        const response = await api.put(`/books/${updatedBook.id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
+        const response = await booksApi.updateBook(bookId, JSON.stringify(book), file ?? undefined)
 
         if (response.status === 200) {
-          _set((state: BookState) => {
+          _set((state) => {
             if (!Array.isArray(state.books)) {
               return state
             }
 
-            const updatedBooks: Array<Book> = state.books.map((book: Book) =>
-              book.id === updatedBook.id ? { ...book, ...updatedBook } : book
+            const updatedBooks: Array<BookListItem> = state.books.map((item) =>
+              item.id === bookId
+                ? {
+                    ...item,
+                    titolo: book.titolo ?? item.titolo,
+                    isbn: book.isbn ?? item.isbn,
+                    genere: Array.isArray(book.genere) ? book.genere : item.genere,
+                    quantita: book.quantita ?? item.quantita,
+                    casaEditrice: book.casaEditrice ?? item.casaEditrice,
+                    descrizione: book.descrizione ?? item.descrizione,
+                    autori:
+                      [book.nomeAutore, book.cognomeAutore]
+                        .filter(
+                          (part): part is Array<string> => Array.isArray(part) && part.length > 0
+                        )
+                        .map((part) => part.join(' '))
+                        .join(', ') || item.autori,
+                    copertina: file ?? item.copertina,
+                  }
+                : item
             )
 
             return {
@@ -190,24 +166,10 @@ const useBookStore = create<BookState>((_set, _get) => {
             color: 'green',
           })
           return true
-        } else if (response.status === 400) {
-          notifications.show({
-            title: 'Errore client',
-            message: response.data,
-            color: 'red',
-          })
-          return false
-        } else if (response.status === 500) {
-          notifications.show({
-            title: 'Errore server',
-            message: response.data,
-            color: 'red',
-          })
-          return false
         } else {
           notifications.show({
-            title: 'Errore sconosciuto',
-            message: response.data,
+            title: 'Errore client',
+            message: formatErrorMessage(response.data, 'Errore sconosciuto'),
             color: 'red',
           })
           return false
@@ -224,15 +186,15 @@ const useBookStore = create<BookState>((_set, _get) => {
 
     deleteBook: async (bookId: number) => {
       try {
-        const response = await api.delete(`/books/${bookId}`)
+        const response = await booksApi.deleteBook(bookId)
         if (response.status === 200) {
-          _set((state: BookState) => {
+          _set((state) => {
             if (!Array.isArray(state.books)) {
               return state
             }
             return {
               ...state,
-              books: state.books.filter((book: Book) => book.id !== bookId),
+              books: state.books.filter((book) => book.id !== bookId),
             }
           })
           notifications.show({

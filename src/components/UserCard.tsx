@@ -1,8 +1,8 @@
-import type { User } from '@local/types/user'
+import type { UserListItem } from '@local/api'
 import { Avatar, Box, Card, Group, Text } from '@mantine/core'
 
 interface UserCardProps {
-  user: Partial<User>
+  user: UserListItem
 }
 
 export function UserCard({ user }: UserCardProps) {
