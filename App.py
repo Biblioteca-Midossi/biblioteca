@@ -1,4 +1,5 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 # Generated server package (contracts_gen/biblioteca_api) is not installed;
@@ -16,8 +17,16 @@ from starlette.responses import FileResponse
 
 from api.auth import auth
 from api.impl import install_request_context_middleware
+from api.lib.database import ensure_admin
 
-biblioteca = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await ensure_admin()
+    yield
+
+
+biblioteca = FastAPI(lifespan=lifespan)
 
 # CORS for Vite dev server
 biblioteca.add_middleware(

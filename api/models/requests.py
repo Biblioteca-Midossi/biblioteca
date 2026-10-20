@@ -1,6 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from api.models.enums import Istituto
+
 
 class CollocazioneData(BaseModel):
     scaffale: str
@@ -58,3 +60,16 @@ class UpdateUserPayload(BaseModel):
     username: str | None = None
     ruolo: int | None = None
     email: str | None = None
+
+
+class UserProfilePatch(BaseModel):
+    """Partial profile update for the authenticated user (all fields optional)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    profile_picture: str | None = None
+    nome: str | None = None
+    cognome: str | None = None
+    email: str | None = None
+    bio: str | None = None
+    istituto: Istituto | None = None

@@ -18,7 +18,14 @@ from api.lib.database import PSQLDatabase
 from api.lib.logger import log
 from api.models.requests import CollocazioneData, CreateBookPayload, UpdateBookPayload
 from api.models.responses import BookResponse
-from api.models.rows import BookDetailRow, BookListRow, BookThumbnailRow, RecentBookRow
+from api.models.rows import (
+    BookDetailRow,
+    BookExistsRow,
+    BookListRow,
+    BookThumbnailRow,
+    CollocazioneRow,
+    RecentBookRow,
+)
 from api.services.db_operations import insert_book_into_database, insert_collocazione
 from api.services.file_operations import convert_to_png
 
@@ -63,24 +70,25 @@ class BooksImpl(BaseBooksApi):
             LIMIT %s OFFSET %s
         """
 
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            if search:
-                where = """
-                    WHERE l.titolo ILIKE %s
-                    OR a.nome ILIKE %s
-                    OR a.cognome ILIKE %s
-                    OR g.nome_genere ILIKE %s
-                """
-                pattern = f"%{search}%"
-                cursor.execute(
-                    base_query.replace("-- WHERE_CLAUSE", where),
-                    (limit, pattern, pattern, pattern, pattern, limit, offset),
-                )
-            else:
-                cursor.execute(base_query.replace("-- WHERE_CLAUSE", ""), (limit, limit, offset))
+        if search:
+            where = """
+                WHERE l.titolo ILIKE %s
+                OR a.nome ILIKE %s
+                OR a.cognome ILIKE %s
+                OR g.nome_genere ILIKE %s
+            """
+            pattern = f"%{search}%"
+            params: tuple = (limit, pattern, pattern, pattern, pattern, limit, offset)
+        else:
+            where = ""
+            params = (limit, limit, offset)
 
-            raw_books = db.fetchall_as(BookListRow)
+        async with PSQLDatabase() as db:
+            raw_books = await db.fetchall_as(
+                BookListRow,
+                base_query.replace("-- WHERE_CLAUSE", where),
+                params,
+            )
 
         if not raw_books:
             raise HTTPException(status_code=204, detail="Books not found")
@@ -112,7 +120,7 @@ class BooksImpl(BaseBooksApi):
         thumbnail: UploadFile | None,
     ) -> MessageResponse:
         payload = await get_payload()
-        require_permission(payload, "create_book")
+        await require_permission(payload, "create_book")
         try:
             book_payload = CreateBookPayload.model_validate(json.loads(data))
             await insert_book_into_database(book_payload, thumbnail)
@@ -125,9 +133,9 @@ class BooksImpl(BaseBooksApi):
 
     async def get_recent_books(self, limit: int | None) -> RecentBooksListResponse:
         limit = limit or 5
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            cursor.execute(
+        async with PSQLDatabase() as db:
+            raw_books = await db.fetchall_as(
+                RecentBookRow,
                 """
                 SELECT
                     l.id_libro,
@@ -148,8 +156,6 @@ class BooksImpl(BaseBooksApi):
                 """,
                 (limit,),
             )
-
-            raw_books = db.fetchall_as(RecentBookRow)
 
         if not raw_books:
             # Return empty list rather than 204 so frontend can render gracefully
@@ -173,11 +179,10 @@ class BooksImpl(BaseBooksApi):
         return RecentBooksListResponse(books=books)
 
     async def get_book(self, book_id: int) -> BookDetailResponse:
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-
+        async with PSQLDatabase() as db:
             # Fetch book details
-            cursor.execute(
+            book = await db.fetchone_as(
+                BookDetailRow,
                 """
                 SELECT
                     l.id_libro,
@@ -204,7 +209,6 @@ class BooksImpl(BaseBooksApi):
                 """,
                 (book_id,),
             )
-            book = db.fetchone_as(BookDetailRow)
 
         if not book:
             raise HTTPException(404, "Book not found")
@@ -233,7 +237,7 @@ class BooksImpl(BaseBooksApi):
         file: UploadFile | None,
     ) -> MessageResponse:
         payload = await get_payload()
-        require_permission(payload, "edit_book")
+        await require_permission(payload, "edit_book")
         try:
             if not updated_book:
                 raise HTTPException(
@@ -242,12 +246,16 @@ class BooksImpl(BaseBooksApi):
                 )
             data = UpdateBookPayload.model_validate(json.loads(updated_book))
 
-            with PSQLDatabase() as db:
+            async with PSQLDatabase() as db:
                 cursor = db.get_cursor()
 
                 # Check if book exists
-                cursor.execute("SELECT 1 FROM LIBRI WHERE id_libro = %s", (book_id,))
-                if not cursor.fetchone():
+                exists = await db.fetchone_as(
+                    BookExistsRow,
+                    "SELECT 1 AS one FROM libri WHERE id_libro = %s",
+                    (book_id,),
+                )
+                if not exists:
                     raise HTTPException(status_code=404, detail="Libro non trovato")
 
                 update_fields: dict[str, object] = {}
@@ -265,13 +273,16 @@ class BooksImpl(BaseBooksApi):
 
                 if data.genere is not None:
                     genres = data.genere if isinstance(data.genere, list) else [data.genere]
-                    self._replace_genres(cursor, book_id, genres)
+                    await self._replace_genres(cursor, book_id, genres)
 
                 if data.nome_autore is not None and data.cognome_autore is not None:
-                    self._replace_authors(cursor, book_id, data.nome_autore, data.cognome_autore)
+                    await self._replace_authors(
+                        cursor, book_id, data.nome_autore, data.cognome_autore
+                    )
 
                 if data.istituto is not None or data.scaffale is not None:
-                    cursor.execute(
+                    current = await db.fetchone_as(
+                        CollocazioneRow,
                         """
                         SELECT c.istituto, c.scaffale
                         FROM libri l
@@ -280,21 +291,20 @@ class BooksImpl(BaseBooksApi):
                         """,
                         (book_id,),
                     )
-                    current = cursor.fetchone()
                     istituto = (
                         data.istituto
                         if data.istituto is not None
-                        else (current[0] if current else None)
+                        else (current.istituto if current else None)
                     )
                     scaffale = (
                         data.scaffale
                         if data.scaffale is not None
-                        else (current[1] if current else None)
+                        else (current.scaffale if current else None)
                     )
-                    id_collocazione = insert_collocazione(
+                    id_collocazione = await insert_collocazione(
                         CollocazioneData(istituto=istituto or "", scaffale=scaffale or "")
                     )
-                    cursor.execute(
+                    await cursor.execute(
                         "UPDATE libri SET id_collocazione = %s WHERE id_libro = %s",
                         (id_collocazione, book_id),
                     )
@@ -302,7 +312,7 @@ class BooksImpl(BaseBooksApi):
                 # Construct and execute update query
                 if update_fields:
                     set_clause = ", ".join([f"{k} = %s" for k in update_fields])
-                    cursor.execute(
+                    await cursor.execute(
                         f"""
                         UPDATE libri
                         SET {set_clause}
@@ -314,7 +324,7 @@ class BooksImpl(BaseBooksApi):
                 if file and file.filename:
                     await self._save_thumbnail(cursor, book_id, file)
 
-                db.commit()
+                await db.commit()
                 log.info(f"Libro {book_id} aggiornato con successo")
                 return MessageResponse(message="Libro aggiornato con successo")
 
@@ -329,12 +339,13 @@ class BooksImpl(BaseBooksApi):
 
     async def delete_book(self, book_id: int) -> MessageResponse:
         payload = await get_payload()
-        require_permission(payload, "delete_book")
+        await require_permission(payload, "delete_book")
         try:
-            with PSQLDatabase() as db:
+            async with PSQLDatabase() as db:
                 cursor = db.get_cursor()
 
-                cursor.execute(
+                book = await db.fetchone_as(
+                    BookThumbnailRow,
                     """
                     SELECT thumbnail_path
                     FROM libri
@@ -342,7 +353,6 @@ class BooksImpl(BaseBooksApi):
                     """,
                     (book_id,),
                 )
-                book = db.fetchone_as(BookThumbnailRow)
 
                 if not book:
                     raise HTTPException(status_code=404, detail="Libro non trovato")
@@ -353,7 +363,7 @@ class BooksImpl(BaseBooksApi):
                     except FileNotFoundError:
                         log.warning(f"Thumbnail non trovata: {book.thumbnail_path}")
 
-                cursor.execute(
+                await cursor.execute(
                     """
                     DELETE FROM libro_autori
                     WHERE id_libro = %s
@@ -361,7 +371,7 @@ class BooksImpl(BaseBooksApi):
                     (book_id,),
                 )
 
-                db.commit()
+                await db.commit()
 
                 log.info(f"Libro {book_id} eliminato con successo")
                 return MessageResponse(message="Libro eliminato con successo")
@@ -376,11 +386,11 @@ class BooksImpl(BaseBooksApi):
             raise HTTPException(status_code=500, detail="Errore interno del server") from e
 
     @staticmethod
-    def _replace_genres(cursor: psycopg.Cursor, book_id: int, genres: list[str]) -> None:
-        cursor.execute("DELETE FROM libro_generi WHERE id_libro = %s", (book_id,))
+    async def _replace_genres(cursor: psycopg.AsyncCursor, book_id: int, genres: list[str]) -> None:
+        await cursor.execute("DELETE FROM libro_generi WHERE id_libro = %s", (book_id,))
         for genre in genres:
             # Find existing genre id
-            cursor.execute(
+            await cursor.execute(
                 """
                 SELECT id_genere
                 FROM generi
@@ -388,17 +398,17 @@ class BooksImpl(BaseBooksApi):
                 """,
                 (genre,),
             )
-            row = cursor.fetchone()
+            row = await cursor.fetchone()
             if row:
                 id_genere = row[0]
             else:
-                cursor.execute(
+                await cursor.execute(
                     "INSERT INTO generi (nome_genere) VALUES (%s) RETURNING id_genere",
                     (genre,),
                 )
-                id_genere = cursor.fetchone()[0]
+                id_genere = (await cursor.fetchone())[0]
 
-            cursor.execute(
+            await cursor.execute(
                 """
                 INSERT INTO libro_generi (id_libro, id_genere)
                 VALUES (%s, %s)
@@ -408,8 +418,8 @@ class BooksImpl(BaseBooksApi):
             )
 
     @staticmethod
-    def _replace_authors(
-        cursor: psycopg.Cursor,
+    async def _replace_authors(
+        cursor: psycopg.AsyncCursor,
         book_id: int,
         names: list[str],
         surnames: list[str],
@@ -423,7 +433,7 @@ class BooksImpl(BaseBooksApi):
                 detail="Numero di nomi e cognomi degli autori non corrispondente",
             )
 
-        cursor.execute(
+        await cursor.execute(
             """
             DELETE FROM libro_autori
             WHERE id_libro = %s
@@ -433,22 +443,22 @@ class BooksImpl(BaseBooksApi):
         seen: set[tuple[int, int]] = set()
 
         for nome, cognome in zip(nome_list, cognome_list, strict=False):
-            cursor.execute(
+            await cursor.execute(
                 "SELECT id_autore FROM autori WHERE nome = %s AND cognome = %s",
                 (nome, cognome),
             )
-            row = cursor.fetchone()
+            row = await cursor.fetchone()
             if row:
                 id_autore = row[0]
             else:
-                cursor.execute(
+                await cursor.execute(
                     "INSERT INTO autori (nome, cognome) VALUES (%s, %s) RETURNING id_autore",
                     (nome, cognome),
                 )
-                id_autore = cursor.fetchone()[0]
+                id_autore = (await cursor.fetchone())[0]
 
             if (book_id, id_autore) not in seen:
-                cursor.execute(
+                await cursor.execute(
                     "INSERT INTO libro_autori (id_libro, id_autore) VALUES (%s, %s)"
                     " ON CONFLICT DO NOTHING",
                     (book_id, id_autore),
@@ -456,7 +466,7 @@ class BooksImpl(BaseBooksApi):
                 seen.add((book_id, id_autore))
 
     @staticmethod
-    async def _save_thumbnail(cursor: psycopg.Cursor, book_id: int, file: UploadFile) -> None:
+    async def _save_thumbnail(cursor: psycopg.AsyncCursor, book_id: int, file: UploadFile) -> None:
         save_dir = "./uploads/thumbnails/"
         existing = os.path.join(save_dir, f"{book_id}.png")
 
@@ -473,7 +483,7 @@ class BooksImpl(BaseBooksApi):
         with open(file_path, "wb") as buffer:
             buffer.write(png_bytes)
 
-        cursor.execute(
+        await cursor.execute(
             """
             UPDATE libri
             SET thumbnail_path = %s

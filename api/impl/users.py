@@ -14,8 +14,14 @@ from api.auth.helpers import fetch_user_permissions
 from api.impl._security import get_payload, require_permission
 from api.lib.database import PSQLDatabase
 from api.models.auth import UserProfileUpdate
-from api.models.requests import UpdateUserPayload
-from api.models.rows import UserListRow
+from api.models.requests import UpdateUserPayload, UserProfilePatch
+from api.models.rows import (
+    RolePositionRow,
+    UserIdRow,
+    UserListRow,
+    UserProfilePictureRow,
+    UserTargetRow,
+)
 from api.services.file_operations import upload_profile_picture
 from api.services.user_service import get_user_profile, update_user_profile
 
@@ -42,7 +48,7 @@ class UsersImpl(BaseUsersApi):
         if not profile:
             raise HTTPException(status_code=404, detail="Utente non trovato")
 
-        permissions = fetch_user_permissions(profile.id)
+        permissions = await fetch_user_permissions(profile.id)
 
         return UserProfileOut(
             id=profile.id,
@@ -66,7 +72,7 @@ class UsersImpl(BaseUsersApi):
     ) -> MessageResponse:
         payload = await get_payload()
         user_id = int(payload.sub)
-        update_data: dict[str, object] = {}
+        patch = UserProfilePatch()
 
         # Handle file upload if needed
         if file and file.filename and file.size:
@@ -82,26 +88,25 @@ class UsersImpl(BaseUsersApi):
             # Upload new file picture
             await upload_profile_picture(user_id, file)
 
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                row = await db.fetchone_as(
+                    UserProfilePictureRow,
                     "SELECT profile_picture FROM utenti WHERE id = %s",
                     (user_id,),
                 )
-                row = cursor.fetchone()
-            update_data["profile_picture"] = row[0] if row else None
+            patch.profile_picture = row.profile_picture if row else None
 
         if profile_update:
             updates = profile_update.model_dump(mode="python", exclude_unset=True)
-            if updates.get("istituto") is not None:
+            if "istituto" in updates and updates["istituto"] is not None:
                 updates["istituto"] = updates["istituto"].value
-            update_data.update(updates)
+            patch = patch.model_copy(update=updates)
 
-        if not update_data:
+        if not patch.model_fields_set:
             raise HTTPException(status_code=400, detail="Nessun campo da aggiornare")
 
         try:
-            await update_user_profile(user_id, update_data)
+            await update_user_profile(user_id, patch)
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -109,17 +114,14 @@ class UsersImpl(BaseUsersApi):
 
     async def get_users(self, offset: int | None, limit: int | None) -> UsersListResponse:
         payload = await get_payload()
-        require_permission(payload, "view_users")
+        await require_permission(payload, "view_users")
         offset = offset or 0
         limit = limit or 10
 
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-
-            cursor.execute("SELECT COUNT(*) FROM utenti")
-            total_users = cursor.fetchone()[0]
-
-            cursor.execute(
+        async with PSQLDatabase() as db:
+            total_users = await db.fetch_scalar("SELECT COUNT(*) FROM utenti")
+            users_raw = await db.fetchall_as(
+                UserListRow,
                 """
                 SELECT u.id, u.nome, u.cognome, u.username, u.role_id, r.name AS role_name,
                        u.istituto, u.email
@@ -130,19 +132,18 @@ class UsersImpl(BaseUsersApi):
                 """,
                 (limit, offset),
             )
-            users_raw = db.fetchall_as(UserListRow)
 
         users = [_user_list_item(user) for user in users_raw]
         return UsersListResponse(users=users, total=total_users)
 
     async def get_recent_users(self, limit: int | None) -> UsersRecentListResponse:
         payload = await get_payload()
-        require_permission(payload, "view_users")
+        await require_permission(payload, "view_users")
         limit = limit or 5
 
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            cursor.execute(
+        async with PSQLDatabase() as db:
+            users_raw = await db.fetchall_as(
+                UserListRow,
                 """
                 SELECT u.id, u.nome, u.cognome, u.username, u.role_id, r.name AS role_name,
                        u.istituto, u.email
@@ -153,7 +154,6 @@ class UsersImpl(BaseUsersApi):
                 """,
                 (limit,),
             )
-            users_raw = db.fetchall_as(UserListRow)
 
         users = [_user_list_item(user) for user in users_raw]
         return UsersRecentListResponse(users=users)
@@ -169,21 +169,20 @@ class UsersImpl(BaseUsersApi):
         current_role_id = int(extra.get("role_id", 0))
 
         # Fetch the target user and also get role positions for hierarchy
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-
+        async with PSQLDatabase() as db:
             # Get current user's role position (lower = higher rank)
-            cursor.execute(
+            current = await db.fetchone_as(
+                RolePositionRow,
                 "SELECT position FROM roles WHERE id = %s",
                 (current_role_id,),
             )
-            cur_pos_row = cursor.fetchone()
-            if not cur_pos_row:
+            if not current:
                 raise HTTPException(status_code=403, detail="Ruolo non trovato")
-            current_position = cur_pos_row[0]
+            current_position = current.position
 
             # Get target user info
-            cursor.execute(
+            target = await db.fetchone_as(
+                UserTargetRow,
                 """
                 SELECT u.id, u.role_id, r.position AS role_position, r.name AS role_name
                 FROM utenti u
@@ -192,12 +191,11 @@ class UsersImpl(BaseUsersApi):
                 """,
                 (user_id,),
             )
-            target = cursor.fetchone()
 
         if not target:
             raise HTTPException(status_code=404, detail="Utente non trovato")
 
-        _target_id, _target_role_id, target_position, _target_role_name = target
+        target_position = target.role_position
 
         user_data = self._to_update_payload(update_user_request.user_data)
 
@@ -219,47 +217,44 @@ class UsersImpl(BaseUsersApi):
         # If changing role, validate new role is lower rank than current user
         if user_data.ruolo is not None:
             new_role_id = int(user_data.ruolo)
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                new_pos = await db.fetchone_as(
+                    RolePositionRow,
                     "SELECT position FROM roles WHERE id = %s",
                     (new_role_id,),
                 )
-                new_pos_row = cursor.fetchone()
-                if not new_pos_row:
+                if not new_pos:
                     raise HTTPException(status_code=400, detail="Ruolo non valido")
-                new_position = new_pos_row[0]
 
-                if new_position <= current_position:
+                if new_pos.position <= current_position:
                     raise HTTPException(
                         status_code=403,
                         detail="Non puoi assegnare un ruolo uguale o superiore al tuo",
                     )
 
-        allowed_fields = {"nome", "cognome", "username", "ruolo", "email"}
-        update_fields = []
-        values = []
-        for key, value in user_data.model_dump(exclude_unset=True).items():
-            if key in allowed_fields:
-                # Map frontend 'ruolo' (role_id int) to DB column 'role_id'
-                db_key = "role_id" if key == "ruolo" else key
-                update_fields.append(f"{db_key} = %s")
-                values.append(value)
+        # Fixed field → column map (frontend 'ruolo' maps to DB 'role_id')
+        field_columns = {
+            "nome": "nome",
+            "cognome": "cognome",
+            "username": "username",
+            "ruolo": "role_id",
+            "email": "email",
+        }
+        updates = user_data.model_dump(exclude_unset=True)
+        set_clause = ", ".join(f"{field_columns[key]} = %s" for key in updates)
 
-        if not update_fields:
+        if not set_clause:
             raise HTTPException(status_code=400, detail="Nessun campo valido da aggiornare")
 
-        values.append(user_id)
-
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            cursor.execute(
-                f"UPDATE utenti SET {', '.join(update_fields)} WHERE id = %s RETURNING id",
-                tuple(values),
+        async with PSQLDatabase() as db:
+            updated = await db.fetchone_as(
+                UserIdRow,
+                f"UPDATE utenti SET {set_clause} WHERE id = %s RETURNING id",
+                (*updates.values(), user_id),
             )
-            if not cursor.fetchone():
+            if not updated:
                 raise HTTPException(status_code=404, detail="Utente non trovato")
-            db.commit()
+            await db.commit()
 
         return MessageResponse(message="Utente aggiornato con successo")
 

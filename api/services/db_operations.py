@@ -1,5 +1,5 @@
-import psycopg
 from fastapi import HTTPException, UploadFile
+from psycopg import DatabaseError
 from starlette.responses import JSONResponse
 
 from api.exceptions import InvalidRequestError
@@ -14,67 +14,53 @@ from api.models.requests import (
 from api.services.file_operations import upload_thumbnail
 
 
-def check_isbn_exists(isbn: str) -> bool:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute("select count(*) from libri where isbn = %s", (isbn,))
-        return cursor.fetchone()[0] > 0
+async def check_isbn_exists(isbn: str) -> bool:
+    async with PSQLDatabase() as db:
+        count = await db.fetch_scalar("select count(*) from libri where isbn = %s", (isbn,))
+        return count > 0
 
 
-def insert_collocazione(collocazione: CollocazioneData) -> int:
+async def insert_collocazione(collocazione: CollocazioneData) -> int:
     scaffale = collocazione.scaffale.upper()
     istituto = collocazione.istituto.upper()
 
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        id_collocazione = await db.fetch_scalar(
             "select id_collocazione from collocazioni where scaffale = %s and istituto = %s",
             (scaffale, istituto),
         )
-
-        id_collocazione = cursor.fetchone()
         if id_collocazione:
-            return id_collocazione[0]
-        else:
-            cursor.execute(
-                "insert into collocazioni"
-                "(istituto, scaffale) values (%s, %s) "
-                "returning id_collocazione",
-                (istituto, scaffale),
-            )
-            db.commit()
-            return cursor.fetchone()[0]
+            return id_collocazione
+        id_collocazione = await db.fetch_scalar(
+            "insert into collocazioni (istituto, scaffale) values (%s, %s) returning id_collocazione",
+            (istituto, scaffale),
+        )
+        await db.commit()
+        return id_collocazione
 
 
-def insert_autore(autore: AutoreData) -> int:
+async def insert_autore(autore: AutoreData) -> int:
     nome = autore.nome
     cognome = autore.cognome
 
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        id_autore = await db.fetch_scalar(
             "select id_autore from autori where nome = %s and cognome = %s",
             (nome, cognome),
         )
-        author = cursor.fetchone()
-        if author:
-            return author[0]
-        else:
-            cursor.execute(
-                "insert into autori (nome, cognome) values (%s, %s) returning id_autore",
-                (nome, cognome),
-            )
-            db.commit()
-            return cursor.fetchone()[0]
+        if id_autore:
+            return id_autore
+        id_autore = await db.fetch_scalar(
+            "insert into autori (nome, cognome) values (%s, %s) returning id_autore",
+            (nome, cognome),
+        )
+        await db.commit()
+        return id_autore
 
 
-def insert_libro(libro: LibroData, id_collocazione: int):
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-
-        cursor.execute(
+async def insert_libro(libro: LibroData, id_collocazione: int) -> int:
+    async with PSQLDatabase() as db:
+        id_libro = await db.fetch_scalar(
             "insert into libri"
             "(id_collocazione, isbn, titolo, "
             "quantita, casa_editrice, descrizione) "
@@ -89,20 +75,17 @@ def insert_libro(libro: LibroData, id_collocazione: int):
                 libro.descrizione,
             ),
         )
-        id_libro = cursor.fetchone()[0]
-
-        db.commit()
+        await db.commit()
         return id_libro
 
 
-def insert_libro_autori(id_libro: int, id_autore: int):
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+async def insert_libro_autori(id_libro: int, id_autore: int):
+    async with PSQLDatabase() as db:
+        await db.execute(
             "insert into libro_autori (id_libro, id_autore) values (%s, %s)",
             (id_libro, id_autore),
         )
-        db.commit()
+        await db.commit()
 
 
 async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFile | None):
@@ -134,14 +117,13 @@ async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFi
     ]
 
     try:
-        if check_isbn_exists(libro.isbn):
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+        if await check_isbn_exists(libro.isbn):
+            async with PSQLDatabase() as db:
+                await db.execute(
                     "update libri set quantita = libri.quantita + 1 where isbn = %s",
                     (libro.isbn,),
                 )
-                db.commit()
+                await db.commit()
             return JSONResponse(
                 {
                     "message": "The Book is already in the database and the inventory has been updated"
@@ -149,12 +131,12 @@ async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFi
                 201,
             )
 
-        id_collocazione = insert_collocazione(collocazione)
-        id_libro = insert_libro(libro, id_collocazione)
+        id_collocazione = await insert_collocazione(collocazione)
+        id_libro = await insert_libro(libro, id_collocazione)
 
         for author in authors:
-            id_autore = insert_autore(author)
-            insert_libro_autori(id_libro, id_autore)
+            id_autore = await insert_autore(author)
+            await insert_libro_autori(id_libro, id_autore)
         if thumbnail:
             await upload_thumbnail(thumbnail, id_libro)
         log.info(f"Book '{libro.titolo}' inserted successfully into the database.")
@@ -163,7 +145,7 @@ async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFi
     except InvalidRequestError as e:
         log.error(f"Invalid request: {e}.")
         raise HTTPException(status_code=400, detail=str(e))
-    except psycopg.Error as e:
+    except DatabaseError as e:
         log.error(f"Database error: {e}.")
         raise HTTPException(status_code=500, detail="database error")
     except Exception as e:

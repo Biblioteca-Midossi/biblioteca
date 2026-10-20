@@ -36,10 +36,10 @@ async def get_payload() -> TokenPayload:
     return await auth._auth_required(request=request, type="access")
 
 
-def require_permission(payload: TokenPayload, permission: str) -> None:
+async def require_permission(payload: TokenPayload, permission: str) -> None:
     """Check a named permission inside impl methods (router-level deps are gone)."""
     from api.auth.helpers import fetch_user_permissions
 
-    perms = fetch_user_permissions(int(payload.sub))
+    perms = await fetch_user_permissions(int(payload.sub))
     if permission not in perms:
         raise HTTPException(status_code=403, detail="Permessi insufficienti")

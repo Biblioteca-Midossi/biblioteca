@@ -7,18 +7,22 @@ from fastapi import Depends, HTTPException
 from api.auth import auth
 from api.lib.database import PSQLDatabase
 from api.models.auth import RegisterRequest
-from api.models.rows import UserLoginRow
+from api.models.rows import (
+    PermissionNameRow,
+    RoleNameRow,
+    UserLoginRow,
+)
 
 
 def is_email(value: str) -> bool:
     return "@" in value
 
 
-def fetch_user_for_login(login: str) -> UserLoginRow | None:
+async def fetch_user_for_login(login: str) -> UserLoginRow | None:
     field = "email" if is_email(login) else "username"
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        return await db.fetchone_as(
+            UserLoginRow,
             f"""
             SELECT u.id, u.password, u.role_id, r.name AS role_name, u.istituto, u.username
             FROM utenti u
@@ -27,30 +31,27 @@ def fetch_user_for_login(login: str) -> UserLoginRow | None:
             """,
             (login,),
         )
-        return db.fetchone_as(UserLoginRow)
 
 
-def fetch_user_permissions(user_id: int) -> list[str]:
+async def fetch_user_permissions(user_id: int) -> list[str]:
     """Return all permission names for a user.
     Admin role bypass — returns every permission."""
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        # Check role
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        role_row = await db.fetchone_as(
+            RoleNameRow,
             "SELECT r.name FROM utenti u JOIN roles r ON u.role_id = r.id WHERE u.id = %s",
             (user_id,),
         )
-        role_row = cursor.fetchone()
         if not role_row:
             return []
-        role_name = role_row[0]
 
         # Admin gets every permission
-        if role_name == "admin":
-            cursor.execute("SELECT name FROM permissions")
-            return [row[0] for row in cursor.fetchall()]
+        if role_row.name == "admin":
+            rows = await db.fetchall_as(PermissionNameRow, "SELECT name FROM permissions")
+            return [row.name for row in rows]
 
-        cursor.execute(
+        rows = await db.fetchall_as(
+            PermissionNameRow,
             """
             SELECT p.name
             FROM permissions p
@@ -60,23 +61,21 @@ def fetch_user_permissions(user_id: int) -> list[str]:
             """,
             (user_id,),
         )
-        return [row[0] for row in cursor.fetchall()]
+        return [row.name for row in rows]
 
 
-def check_user_exists(username: str, email: str) -> bool:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
-            "SELECT 1 FROM utenti WHERE username = %s OR email = %s",
+async def check_user_exists(username: str, email: str) -> bool:
+    async with PSQLDatabase() as db:
+        count = await db.fetch_scalar(
+            "SELECT COUNT(*) FROM utenti WHERE username = %s OR email = %s",
             (username, email),
         )
-        return cursor.fetchone() is not None
+        return count > 0
 
 
-def create_user(data: RegisterRequest, hashed_password: str) -> None:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+async def create_user(data: RegisterRequest, hashed_password: str) -> None:
+    async with PSQLDatabase() as db:
+        await db.execute(
             """
             INSERT INTO utenti(nome, cognome, username, email, password, istituto, role_id)
             VALUES (%s, %s, %s, %s, %s, %s, (SELECT id FROM roles WHERE name = 'utente'))
@@ -90,7 +89,7 @@ def create_user(data: RegisterRequest, hashed_password: str) -> None:
                 data.istituto.value,
             ),
         )
-        db.commit()
+        await db.commit()
 
 
 # ─── Session / Token helpers ────────────────────────────────────────────────
@@ -112,7 +111,7 @@ def require_permission(permission: str):
 
     async def checker(payload: TokenPayload = Depends(auth.access_token_required)):
         user_id = int(payload.sub)
-        perms = fetch_user_permissions(user_id)
+        perms = await fetch_user_permissions(user_id)
         if permission not in perms:
             raise HTTPException(status_code=403, detail="Permessi insufficienti")
         return payload

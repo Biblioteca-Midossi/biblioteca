@@ -1,11 +1,22 @@
 from api.lib.database import PSQLDatabase
+from api.models.requests import UserProfilePatch
 from api.models.rows import UserBasicRow, UserProfileRow
+
+# Fixed field -> column map for profile updates; only these columns are ever written.
+PROFILE_PATCH_COLUMNS: dict[str, str] = {
+    "profile_picture": "profile_picture",
+    "nome": "nome",
+    "cognome": "cognome",
+    "email": "email",
+    "bio": "bio",
+    "istituto": "istituto",
+}
 
 
 async def get_user_profile(user_id: int) -> UserProfileRow | None:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        return await db.fetchone_as(
+            UserProfileRow,
             """
             SELECT u.*, r.name AS role_name
             FROM utenti u
@@ -14,13 +25,12 @@ async def get_user_profile(user_id: int) -> UserProfileRow | None:
             """,
             (user_id,),
         )
-        return db.fetchone_as(UserProfileRow)
 
 
 async def get_user_by_id(user_id: int) -> UserBasicRow | None:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+    async with PSQLDatabase() as db:
+        return await db.fetchone_as(
+            UserBasicRow,
             """
             SELECT u.id, u.username, u.istituto, u.role_id, r.name AS role_name
             FROM utenti u
@@ -29,15 +39,20 @@ async def get_user_by_id(user_id: int) -> UserBasicRow | None:
             """,
             (user_id,),
         )
-        return db.fetchone_as(UserBasicRow)
 
 
-async def update_user_profile(user_id: int, profile_data: dict[str, object]) -> None:
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        update_fields = ", ".join([f"{k} = %s" for k in profile_data.keys()])
-        query = f"UPDATE utenti SET {update_fields} WHERE id = %s"
+async def update_user_profile(user_id: int, patch: UserProfilePatch) -> None:
+    fields = patch.model_dump(exclude_unset=True)
+    # Keep only known columns, in the fixed map's order — never build SQL from raw keys.
+    assignments = [
+        (col, fields[name]) for name, col in PROFILE_PATCH_COLUMNS.items() if name in fields
+    ]
+    if not assignments:
+        return
 
-        values = [*list(profile_data.values()), user_id]
-        cursor.execute(query, values)
-        db.commit()
+    set_clause = ", ".join(f"{col} = %s" for col, _ in assignments)
+    values = [value for _, value in assignments]
+
+    async with PSQLDatabase() as db:
+        await db.execute(f"UPDATE utenti SET {set_clause} WHERE id = %s", (*values, user_id))
+        await db.commit()

@@ -1,18 +1,10 @@
-import * as path from "path"
 import { defineConfig } from 'vite'
 import react from "@vitejs/plugin-react"
 import tanstackRouter from "@tanstack/router-plugin/vite"
 import tailwindcss from "@tailwindcss/vite"
-import type { PluginOption } from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  resolve: {
-    alias: {
-      '@local': path.resolve(__dirname, './src'),
-    }
-  },
-
   plugins: [
     tanstackRouter({
       target: "react",
@@ -21,8 +13,12 @@ export default defineConfig({
       generatedRouteTree: "./src/routeTree.gen.ts",
     }),
     react(),
-    tailwindcss({ optimize: { minify: true } }) as PluginOption,
+    tailwindcss({ optimize: { minify: true } }),
   ],
+
+  resolve: {
+    tsconfigPaths: true
+  },
 
   // Developement server
   server: {

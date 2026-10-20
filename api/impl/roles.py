@@ -5,24 +5,25 @@ from biblioteca_api.models.role_out import RoleOut
 
 from api.impl._security import get_payload, require_permission
 from api.lib.database import PSQLDatabase
+from api.models.rows import PermissionNameRow
 
 
 class RolesImpl(BaseRolesApi):
     async def list_roles(self) -> list[RoleOut]:
         """List all roles with their permissions. Requires view_users permission."""
         payload = await get_payload()
-        require_permission(payload, "view_users")
-        with PSQLDatabase() as db:
+        await require_permission(payload, "view_users")
+        async with PSQLDatabase() as db:
             cursor = db.get_cursor()
-            cursor.execute(
+            await cursor.execute(
                 "SELECT id, name, display_name, position, color FROM roles ORDER BY position ASC"
             )
-            roles_raw = cursor.fetchall()
+            roles_raw = await cursor.fetchall()
 
             roles = []
-            for r in roles_raw:
-                role_id, name, display_name, position, color = r
-                cursor.execute(
+            for role_id, name, display_name, position, color in roles_raw:
+                permission_rows = await db.fetchall_as(
+                    PermissionNameRow,
                     """
                     SELECT p.name
                     FROM permissions p
@@ -32,7 +33,7 @@ class RolesImpl(BaseRolesApi):
                     """,
                     (role_id,),
                 )
-                permissions = [row[0] for row in cursor.fetchall()]
+                permissions = [row.name for row in permission_rows]
 
                 roles.append(
                     RoleOut(

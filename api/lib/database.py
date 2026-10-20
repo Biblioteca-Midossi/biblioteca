@@ -1,9 +1,11 @@
 import os
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import bcrypt
 import psycopg
-from psycopg_pool import ConnectionPool as PSQLConnectionPool
+from psycopg import AsyncConnection
+from psycopg.rows import class_row
+from psycopg_pool import AsyncConnectionPool
 from pydantic import BaseModel
 
 from api.lib.config import psql_config
@@ -11,114 +13,116 @@ from api.lib.logger import log
 
 M = TypeVar("M", bound=BaseModel)
 
+log.info("Creating async connection pool for postgres..")
+# Not opened here: opening an async pool requires a running event loop,
+# and importing this module must not depend on one. Opened lazily in
+# PSQLDatabase.__aenter__ on first use.
+psql_pool = AsyncConnectionPool(kwargs=psql_config, min_size=1, max_size=4, open=False)
 
-# on_startup()
-log.info("Creating connection pool for postgres..")
-psql_pool = PSQLConnectionPool(kwargs=psql_config, min_size=1, max_size=4)
-psql_pool.wait()
-log.info("Postgres pool successfully created.")
+
+async def _ensure_pool_open():
+    if psql_pool.closed:
+        await psql_pool.open()
 
 
 class PSQLDatabase:
-    def __init__(self):
-        self.conn: psycopg.Connection | None = None
-        self.cursor: psycopg.Cursor | None = None
+    """Async database context manager.
 
-    def open(self):
-        # getting a connection from the pool
+    Usage:
+        async with PSQLDatabase() as db:
+            await db.execute(sql, params)
+            row = await db.fetchone_as(Model, sql, params)
+    """
+
+    def __init__(self):
+        self.conn: AsyncConnection | None = None
+        self.cursor: psycopg.AsyncCursor | None = None
+
+    async def __aenter__(self) -> "PSQLDatabase":
+        await _ensure_pool_open()
         try:
-            self.conn = psql_pool.getconn()
+            self.conn = await psql_pool.getconn()
         except psycopg.Error as pool_error:
             log.error(f"Error while getting a connection from the pool: {pool_error}")
             raise
 
-        # getting the cursor
         try:
             if self.conn:
                 self.cursor = self.conn.cursor()
         except psycopg.Error as cursor_error:
             log.error(f"Error while getting the cursor from the connection: {cursor_error}")
-        return self.conn
+        return self
 
-    def close(self):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            await self.rollback()
+        else:
+            await self.commit()
+        await self.close()
+        return False
+
+    async def close(self):
         try:
             if self.cursor:
-                self.cursor.close()
+                await self.cursor.close()
             if self.conn:
-                psql_pool.putconn(self.conn)
+                await psql_pool.putconn(self.conn)
         except psycopg.Error as close_error:
             log.error(f"Error while closing the cursor or the connection: {close_error}")
 
-    def commit(self):
+    async def commit(self):
         try:
             if self.conn:
-                self.conn.commit()
+                await self.conn.commit()
         except psycopg.Error as commit_error:
-            print(f"Error while committing changes to the database: {commit_error}")
             log.error(f"Error while committing changes to the database: {commit_error}")
 
-    def rollback(self):
+    async def rollback(self):
         try:
             if self.conn:
-                self.conn.rollback()
+                await self.conn.rollback()
         except psycopg.Error as rollback_error:
-            log.error(f"Error while committing changes to the database: {rollback_error}")
+            log.error(f"Error while rolling back changes to the database: {rollback_error}")
 
-    def get_cursor(self):
+    def get_cursor(self) -> psycopg.AsyncCursor:
         if self.cursor:
             return self.cursor
-        else:
-            raise Exception("No cursor available")
+        raise Exception("No cursor available")
 
-    def fetchone_to_dict(self) -> dict[str, Any] | None:
-        if self.cursor:
-            row = self.cursor.fetchone()
-            desc = self.cursor.description
-            if not row or not desc:
-                return None
-            colnames = [col[0] for col in desc]
-            return dict(zip(colnames, row, strict=False))
-        return None
+    async def execute(self, sql: str, params: tuple = ()) -> None:
+        cursor = self.get_cursor()
+        await cursor.execute(sql, params)
 
-    def fetchall_to_dict(self) -> list[dict[str, Any]] | None:
-        if self.cursor:
-            rows = self.cursor.fetchall()
-            desc = self.cursor.description
-            if not rows or not desc:
-                return None
-            colnames = [col[0] for col in desc]
-            return [dict(zip(colnames, row, strict=False)) for row in rows]
-        return None
+    async def fetchone_as[M: BaseModel](
+        self, model: type[M], sql: str, params: tuple = ()
+    ) -> M | None:
+        if not self.conn:
+            raise Exception("No connection available")
+        async with self.conn.cursor(row_factory=class_row(model)) as cursor:
+            await cursor.execute(sql, params)
+            return await cursor.fetchone()
 
-    def fetchone_as(self, model: type[M]) -> M | None:
-        raw = self.fetchone_to_dict()
-        if raw is None:
-            return None
-        return model.model_validate(raw)
+    async def fetchall_as[M: BaseModel](
+        self, model: type[M], sql: str, params: tuple = ()
+    ) -> list[M]:
+        if not self.conn:
+            raise Exception("No connection available")
+        async with self.conn.cursor(row_factory=class_row(model)) as cursor:
+            await cursor.execute(sql, params)
+            return list(await cursor.fetchall())
 
-    def fetchall_as(self, model: type[M]) -> list[M]:
-        raw = self.fetchall_to_dict()
-        if raw is None:
-            return []
-        return [model.model_validate(r) for r in raw]
-
-    def __enter__(self) -> "PSQLDatabase":
-        self.open()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is not None:
-            self.rollback()
-        else:
-            self.commit()
-        self.close()
-        return False
+    async def fetch_scalar(self, sql: str, params: tuple = ()) -> int:
+        cursor = self.get_cursor()
+        await cursor.execute(sql, params)
+        row = await cursor.fetchone()
+        if row is None:
+            raise Exception("fetch_scalar: no result")
+        return row[0]
 
 
-def check_admin():
-    with PSQLDatabase() as db:
-        cursor = db.get_cursor()
-        cursor.execute(
+async def ensure_admin():
+    async with PSQLDatabase() as db:
+        count = await db.fetch_scalar(
             """
             SELECT COUNT(*)
             FROM utenti u
@@ -126,18 +130,15 @@ def check_admin():
             WHERE r.name = 'admin'
             """
         )
-        result = cursor.fetchone()
-
-        if result and result[0] > 0:
+        if count > 0:
             log.info("Admin user already exists — skipping admin bootstrap.")
             return
 
         log.info("Admin user not found. Creating initial admin user")
 
         default_password = os.getenv("ADMIN_PASSWORD")
-        log.info(f"Default password: {default_password}")
         if default_password:
-            cursor.execute(
+            await db.execute(
                 """INSERT INTO utenti(cognome, nome, istituto, role_id, password, username, email)
                    VALUES (%s, %s, %s, (SELECT id FROM roles WHERE name = 'admin'), %s, %s, %s)""",
                 (
@@ -149,7 +150,4 @@ def check_admin():
                     "support@localhost.com",
                 ),
             )
-            db.commit()
-
-
-check_admin()
+            await db.commit()

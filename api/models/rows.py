@@ -125,3 +125,91 @@ class UserBasicRow(BaseModel):
     istituto: Istituto | None = None
     role_id: int
     role_name: str = ""
+
+
+class RolePositionRow(BaseModel):
+    """Row shape for a role position lookup."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    position: int
+
+
+class UserTargetRow(BaseModel):
+    """Row shape for the target-user lookup in update_user."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    role_id: int
+    role_position: int
+    role_name: str = ""
+
+
+class UserSessionRow(BaseModel):
+    """Row shape for a session lookup by token hash."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_id: int
+    revoked: bool
+    expires_at: datetime
+
+
+class UserRefreshInfoRow(BaseModel):
+    """Row shape for refresh token info lookup on utenti."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    role_id: int
+    role_name: str = ""
+    istituto: Istituto | None = None
+
+
+class UserProfilePictureRow(BaseModel):
+    """Row shape for a profile picture path lookup."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    profile_picture: str | None = None
+
+
+class UserIdRow(BaseModel):
+    """Row shape for RETURNING id updates."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+
+
+class BookExistsRow(BaseModel):
+    """Row shape for a book existence check."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    one: int
+
+
+class CollocazioneRow(BaseModel):
+    """Row shape for the istituto/scaffale lookup in update_book."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    istituto: str | None = None
+    scaffale: str | None = None
+
+
+class RoleNameRow(BaseModel):
+    """Single-column row shape for role name lookups."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str
+
+
+class PermissionNameRow(BaseModel):
+    """Single-column row shape for permission name lookups."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str

@@ -35,13 +35,12 @@ async def upload_thumbnail(file, book_id):
         with open(file_path, "wb") as buffer:
             buffer.write(png_bytes)
 
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            cursor.execute(
+        async with PSQLDatabase() as db:
+            await db.execute(
                 "update libri set thumbnail_path = %s where id_libro = %s",
                 (file_path[2:], book_id),
             )
-            db.commit()
+            await db.commit()
 
         return JSONResponse({"status": "successful"}, status_code=200)
 
@@ -64,13 +63,12 @@ async def upload_profile_picture(file, user_id):
         with open(file_path, "wb") as buffer:
             buffer.write(png_bytes)
 
-        with PSQLDatabase() as db:
-            cursor = db.get_cursor()
-            cursor.execute(
+        async with PSQLDatabase() as db:
+            await db.execute(
                 "update utenti set profile_picture = %s where id = %s",
                 (file_path[2:], user_id),
             )
-            db.commit()
+            await db.commit()
 
         return JSONResponse({"status": "successful"}, status_code=200)
 

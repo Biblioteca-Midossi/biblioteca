@@ -22,6 +22,7 @@ from api.auth.helpers import (
 from api.impl._security import get_active_request
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
+from api.models.rows import UserRefreshInfoRow, UserSessionRow
 
 
 def _message_response(message: str, status_code: int = 200) -> JSONResponse:
@@ -34,7 +35,7 @@ def _message_response(message: str, status_code: int = 200) -> JSONResponse:
 class AuthImpl(BaseAuthApi):
     async def register(self, register_request: RegisterRequest) -> MessageResponse:
         try:
-            if check_user_exists(
+            if await check_user_exists(
                 register_request.username,
                 str(register_request.email),
             ):
@@ -44,7 +45,7 @@ class AuthImpl(BaseAuthApi):
                 register_request.password.encode(),
                 bcrypt.gensalt(),
             ).decode()
-            create_user(register_request, hashed)
+            await create_user(register_request, hashed)
             return JSONResponse(
                 MessageResponse(message="Registrazione avvenuta con successo").model_dump(
                     by_alias=True
@@ -59,7 +60,7 @@ class AuthImpl(BaseAuthApi):
 
     async def login(self, login_request: LoginRequest) -> MessageResponse:
         try:
-            row = fetch_user_for_login(login_request.login)
+            row = await fetch_user_for_login(login_request.login)
             if not row or not bcrypt.checkpw(
                 login_request.password.encode(),
                 row.password.encode(),
@@ -67,7 +68,7 @@ class AuthImpl(BaseAuthApi):
                 raise HTTPException(status_code=401, detail="Credenziali non valide")
 
             uid = str(row.id)
-            permissions = fetch_user_permissions(row.id)
+            permissions = await fetch_user_permissions(row.id)
 
             extra = {
                 "role_id": row.role_id,
@@ -83,15 +84,14 @@ class AuthImpl(BaseAuthApi):
             token_hash = hash_token(refresh_token_str)
             expires_at = datetime.now(UTC) + timedelta(seconds=auth.refresh_max_age())
 
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                await db.execute(
                     "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (%s, %s, %s)",
                     (row.id, token_hash, expires_at),
                 )
                 # Update last_login
-                cursor.execute("UPDATE utenti SET last_login = NOW() WHERE id = %s", (row.id,))
-                db.commit()
+                await db.execute("UPDATE utenti SET last_login = NOW() WHERE id = %s", (row.id,))
+                await db.commit()
 
             resp = _message_response("Login effettuato con successo")
             auth.set_access_cookies(access_token, resp, max_age=auth.access_max_age())
@@ -112,26 +112,25 @@ class AuthImpl(BaseAuthApi):
 
             token_hash = hash_token(refresh_token)
 
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                session = await db.fetchone_as(
+                    UserSessionRow,
                     "SELECT user_id, revoked, expires_at FROM sessions WHERE token_hash = %s",
                     (token_hash,),
                 )
-                row = cursor.fetchone()
-                if not row:
+                if not session:
                     raise HTTPException(status_code=401, detail="Refresh token non valido")
 
-                user_id, revoked, expires_at = row
+                user_id = session.user_id
 
-                if revoked or expires_at < datetime.now(UTC):
+                if session.revoked or session.expires_at < datetime.now(UTC):
                     raise HTTPException(
                         status_code=401,
                         detail="Refresh token non valido o scaduto",
                     )
 
                 # Rotate: revoke old session
-                cursor.execute(
+                await db.execute(
                     "UPDATE sessions SET revoked = TRUE WHERE token_hash = %s",
                     (token_hash,),
                 )
@@ -140,18 +139,18 @@ class AuthImpl(BaseAuthApi):
                 new_refresh = generate_refresh_token()
                 new_hash = hash_token(new_refresh)
                 new_expires = datetime.now(UTC) + timedelta(seconds=auth.refresh_max_age())
-                cursor.execute(
+                await db.execute(
                     "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (%s, %s, %s)",
                     (user_id, new_hash, new_expires),
                 )
-                db.commit()
+                await db.commit()
 
             # Fetch user info for the new access token
-            permissions = fetch_user_permissions(user_id)
+            permissions = await fetch_user_permissions(user_id)
 
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                user_row = await db.fetchone_as(
+                    UserRefreshInfoRow,
                     """
                     SELECT u.role_id, r.name AS role_name, u.istituto
                     FROM utenti u
@@ -160,11 +159,12 @@ class AuthImpl(BaseAuthApi):
                     """,
                     (user_id,),
                 )
-                user_row = cursor.fetchone()
                 if not user_row:
                     raise HTTPException(status_code=401, detail="Utente non trovato")
 
-                role_id, role_name, istituto = user_row
+                role_id = user_row.role_id
+                role_name = user_row.role_name
+                istituto = user_row.istituto
 
             extra = {
                 "role_id": role_id,
@@ -190,12 +190,11 @@ class AuthImpl(BaseAuthApi):
         refresh_token = request.cookies.get("refresh_token")
         if refresh_token:
             token_hash = hash_token(refresh_token)
-            with PSQLDatabase() as db:
-                cursor = db.get_cursor()
-                cursor.execute(
+            async with PSQLDatabase() as db:
+                await db.execute(
                     "UPDATE sessions SET revoked = TRUE WHERE token_hash = %s",
                     (token_hash,),
                 )
-                db.commit()
+                await db.commit()
         auth.unset_cookies(response)
         return MessageResponse(message="Logout effettuato con successo")
