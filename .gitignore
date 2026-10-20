@@ -17,6 +17,9 @@ docker-compose.yml
 ### Build files
 dist/
 
+### User content (runtime uploads; never commit)
+uploads/
+
 ### Generated sources (never commit; run `bun run typesync`)
 src/api/
 contracts_gen/

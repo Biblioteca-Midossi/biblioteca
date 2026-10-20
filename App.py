@@ -1,3 +1,4 @@
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -51,6 +52,9 @@ api.include_router(auth_router)
 api.include_router(books_router)
 api.include_router(users_router)
 api.include_router(roles_router)
+
+for upload_dir in ("uploads/thumbnails", "uploads/profile_pictures"):
+    os.makedirs(upload_dir, exist_ok=True)
 
 api.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
