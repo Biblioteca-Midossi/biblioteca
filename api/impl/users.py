@@ -132,9 +132,6 @@ class UsersImpl(BaseUsersApi):
             )
             users_raw = db.fetchall_as(UserListRow)
 
-        if not users_raw:
-            return MessageResponse(message="Nessun utente trovato")
-
         users = [_user_list_item(user) for user in users_raw]
         return UsersListResponse(users=users, total=total_users)
 
@@ -157,9 +154,6 @@ class UsersImpl(BaseUsersApi):
                 (limit,),
             )
             users_raw = db.fetchall_as(UserListRow)
-
-        if not users_raw:
-            return MessageResponse(message="Nessun utente trovato")
 
         users = [_user_list_item(user) for user in users_raw]
         return UsersRecentListResponse(users=users)

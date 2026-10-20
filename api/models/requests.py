@@ -46,6 +46,8 @@ class UpdateBookPayload(BaseModel):
     descrizione: str | None = None
     nome_autore: list[str] | None = None
     cognome_autore: list[str] | None = None
+    istituto: str | None = None
+    scaffale: str | None = None
 
 
 class UpdateUserPayload(BaseModel):

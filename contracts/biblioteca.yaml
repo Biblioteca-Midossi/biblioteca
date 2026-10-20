@@ -878,6 +878,10 @@ components:
           type: array
           items:
             type: string
+        istituto:
+          type: string
+        scaffale:
+          type: string
     UpdateUserData:
       type: object
       title: UpdateUserData

@@ -58,6 +58,8 @@ export function BookGridDashboard() {
         quantita: Number(values.quantita),
         casaEditrice: values.casaEditrice,
         descrizione: values.descrizione,
+        istituto: values.istituto || undefined,
+        scaffale: values.scaffale || undefined,
       }
       if (!selectedBook?.id) return
       const success = await editBook(selectedBook.id, bookData, values.copertina ?? undefined)

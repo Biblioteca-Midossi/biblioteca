@@ -16,10 +16,10 @@ from pydantic import Field
 from api.impl._security import get_payload, require_permission
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
-from api.models.requests import CreateBookPayload, UpdateBookPayload
+from api.models.requests import CollocazioneData, CreateBookPayload, UpdateBookPayload
 from api.models.responses import BookResponse
 from api.models.rows import BookDetailRow, BookListRow, BookThumbnailRow, RecentBookRow
-from api.services.db_operations import insert_book_into_database
+from api.services.db_operations import insert_book_into_database, insert_collocazione
 from api.services.file_operations import convert_to_png
 
 
@@ -269,6 +269,35 @@ class BooksImpl(BaseBooksApi):
 
                 if data.nome_autore is not None and data.cognome_autore is not None:
                     self._replace_authors(cursor, book_id, data.nome_autore, data.cognome_autore)
+
+                if data.istituto is not None or data.scaffale is not None:
+                    cursor.execute(
+                        """
+                        SELECT c.istituto, c.scaffale
+                        FROM libri l
+                        LEFT JOIN collocazioni c ON l.id_collocazione = c.id_collocazione
+                        WHERE l.id_libro = %s
+                        """,
+                        (book_id,),
+                    )
+                    current = cursor.fetchone()
+                    istituto = (
+                        data.istituto
+                        if data.istituto is not None
+                        else (current[0] if current else None)
+                    )
+                    scaffale = (
+                        data.scaffale
+                        if data.scaffale is not None
+                        else (current[1] if current else None)
+                    )
+                    id_collocazione = insert_collocazione(
+                        CollocazioneData(istituto=istituto or "", scaffale=scaffale or "")
+                    )
+                    cursor.execute(
+                        "UPDATE libri SET id_collocazione = %s WHERE id_libro = %s",
+                        (id_collocazione, book_id),
+                    )
 
                 # Construct and execute update query
                 if update_fields:
