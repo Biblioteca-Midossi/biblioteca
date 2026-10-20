@@ -112,11 +112,19 @@ class PSQLDatabase:
             return list(await cursor.fetchall())
 
     async def fetch_scalar(self, sql: str, params: tuple = ()) -> int:
+        """Single-value query that MUST return a row (COUNT, RETURNING...)."""
+        value = await self.fetch_scalar_or_none(sql, params)
+        if value is None:
+            raise Exception("fetch_scalar: no result")
+        return value
+
+    async def fetch_scalar_or_none(self, sql: str, params: tuple = ()) -> int | None:
+        """Single-value query that may legitimately return no row (find-by-key lookups)."""
         cursor = self.get_cursor()
         await cursor.execute(sql, params)
         row = await cursor.fetchone()
-        if row is None:
-            raise Exception("fetch_scalar: no result")
+        if row is None or row[0] is None:
+            return None
         return row[0]
 
 

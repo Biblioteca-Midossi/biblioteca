@@ -25,11 +25,11 @@ async def insert_collocazione(collocazione: CollocazioneData) -> int:
     istituto = collocazione.istituto.upper()
 
     async with PSQLDatabase() as db:
-        id_collocazione = await db.fetch_scalar(
+        id_collocazione = await db.fetch_scalar_or_none(
             "select id_collocazione from collocazioni where scaffale = %s and istituto = %s",
             (scaffale, istituto),
         )
-        if id_collocazione:
+        if id_collocazione is not None:
             return id_collocazione
         id_collocazione = await db.fetch_scalar(
             "insert into collocazioni (istituto, scaffale) values (%s, %s) returning id_collocazione",
@@ -44,11 +44,11 @@ async def insert_autore(autore: AutoreData) -> int:
     cognome = autore.cognome
 
     async with PSQLDatabase() as db:
-        id_autore = await db.fetch_scalar(
+        id_autore = await db.fetch_scalar_or_none(
             "select id_autore from autori where nome = %s and cognome = %s",
             (nome, cognome),
         )
-        if id_autore:
+        if id_autore is not None:
             return id_autore
         id_autore = await db.fetch_scalar(
             "insert into autori (nome, cognome) values (%s, %s) returning id_autore",
@@ -140,7 +140,7 @@ async def insert_book_into_database(data: CreateBookPayload, thumbnail: UploadFi
         if thumbnail:
             await upload_thumbnail(thumbnail, id_libro)
         log.info(f"Book '{libro.titolo}' inserted successfully into the database.")
-        return JSONResponse({"status": "successful"}, 201)
+        return JSONResponse({"message": "Libro creato con successo"}, 201)
 
     except InvalidRequestError as e:
         log.error(f"Invalid request: {e}.")

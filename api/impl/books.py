@@ -7,6 +7,7 @@ from typing import Annotated
 import psycopg
 from biblioteca_api.apis.books_api_base import BaseBooksApi
 from biblioteca_api.models.book_detail_response import BookDetailResponse
+from biblioteca_api.models.book_response import BookResponse
 from biblioteca_api.models.books_list_response import BooksListResponse
 from biblioteca_api.models.message_response import MessageResponse
 from biblioteca_api.models.recent_books_list_response import RecentBooksListResponse
@@ -17,7 +18,6 @@ from api.impl._security import get_payload, require_permission
 from api.lib.database import PSQLDatabase
 from api.lib.logger import log
 from api.models.requests import CollocazioneData, CreateBookPayload, UpdateBookPayload
-from api.models.responses import BookResponse
 from api.models.rows import (
     BookDetailRow,
     BookExistsRow,
@@ -123,8 +123,9 @@ class BooksImpl(BaseBooksApi):
         await require_permission(payload, "create_book")
         try:
             book_payload = CreateBookPayload.model_validate(json.loads(data))
-            await insert_book_into_database(book_payload, thumbnail)
-            return MessageResponse(message="Libro creato con successo")
+            # The service returns a JSONResponse carrying the real status
+            # (201 for creation and for ISBN-dedupe inventory increments).
+            return await insert_book_into_database(book_payload, thumbnail)
         except HTTPException:
             raise
         except Exception as e:
