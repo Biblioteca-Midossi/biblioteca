@@ -1,7 +1,6 @@
-import type { BookListItem } from '@local/hooks/useBookStore'
+import type { BookListItem } from '@local/types/book'
 import { Box, Button, Group, Image, SimpleGrid, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { modals } from '@mantine/modals'
 import type { ChangeEvent } from 'react'
 import { useEffect } from 'react'
 
@@ -26,7 +25,7 @@ interface BookEditFormContentProps {
   onSubmit: (values: EditBookFormValues) => Promise<void>
 }
 
-function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentProps) {
+export function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentProps) {
   const form = useForm<EditBookFormValues>({
     initialValues: {
       titolo: '',
@@ -107,18 +106,4 @@ function BookEditFormContent({ book, onClose, onSubmit }: BookEditFormContentPro
       </Group>
     </form>
   )
-}
-
-export function openBookEditModal(
-  book: Partial<BookListItem> | null,
-  onSubmit: (values: EditBookFormValues) => Promise<void>
-) {
-  const modalId = modals.open({
-    title: 'Modifica Libro',
-    size: 'lg',
-    centered: true,
-    children: (
-      <BookEditFormContent book={book} onSubmit={onSubmit} onClose={() => modals.close(modalId)} />
-    ),
-  })
 }

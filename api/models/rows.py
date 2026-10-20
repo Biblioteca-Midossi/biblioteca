@@ -182,6 +182,14 @@ class UserIdRow(BaseModel):
     id: int
 
 
+class UserReservationCountRow(BaseModel):
+    """Row shape for the reservation-count guard on user deletion."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    count: int
+
+
 class BookExistsRow(BaseModel):
     """Row shape for a book existence check."""
 

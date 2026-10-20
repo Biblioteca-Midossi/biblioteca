@@ -1,4 +1,4 @@
-import type { BookListItem } from '@local/hooks/useBookStore'
+import type { BookListItem } from '@local/types/book'
 import { ActionIcon, Box, Card, Image, Text } from '@mantine/core'
 import { IconDotsVertical } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'

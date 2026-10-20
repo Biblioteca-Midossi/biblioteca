@@ -1,7 +1,6 @@
-import useBookStore from '@local/hooks/useBookStore'
+import { useAddBook } from '@local/hooks/books'
 import { Button, Group, Select, Stack, Tabs, Textarea, TextInput, Tooltip } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { modals } from '@mantine/modals'
 import { IconHelp } from '@tabler/icons-react'
 import type { ChangeEvent } from 'react'
 
@@ -24,8 +23,8 @@ interface BookAddFormContentProps {
   onClose: () => void
 }
 
-function BookAddFormContent({ onClose }: BookAddFormContentProps) {
-  const { addBook } = useBookStore()
+export function BookAddFormContent({ onClose }: BookAddFormContentProps) {
+  const addBook = useAddBook()
 
   const form = useForm<BookFormValues>({
     initialValues: {
@@ -62,8 +61,8 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
   }
 
   async function handleSubmit(values: BookFormValues) {
-    const success = await addBook(
-      {
+    await addBook.mutateAsync({
+      book: {
         isbn: values.isbn,
         titolo: values.titolo,
         genere: values.genere ? [values.genere] : [],
@@ -75,13 +74,10 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
         nomeAutore: values.nomeAutore ? [values.nomeAutore] : [],
         cognomeAutore: values.cognomeAutore ? [values.cognomeAutore] : [],
       },
-      values.copertina
-    )
-
-    if (success) {
-      clearForm()
-      onClose()
-    }
+      thumbnail: values.copertina,
+    })
+    clearForm()
+    onClose()
   }
 
   const istituti = ['ITT', 'LAC', 'LAV']
@@ -150,7 +146,7 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
               description={`${form.values.descrizione.length}/1024`}
               maxLength={1024}
             />
-            <Button variant="outline" color="midossi" component="label" fullWidth>
+            <Button variant="outline" component="label" fullWidth>
               Carica copertina
               <input type="file" accept="file" onChange={onSelectFile} hidden />
             </Button>
@@ -171,12 +167,4 @@ function BookAddFormContent({ onClose }: BookAddFormContentProps) {
       </Group>
     </form>
   )
-}
-
-export function openBookAddModal() {
-  const modalId = modals.open({
-    title: 'Aggiungi Libro',
-    size: 'lg',
-    children: <BookAddFormContent onClose={() => modals.close(modalId)} />,
-  })
 }

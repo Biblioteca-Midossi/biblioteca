@@ -13,6 +13,7 @@ from fastapi import HTTPException, UploadFile
 from api.auth.helpers import fetch_user_permissions
 from api.impl._security import get_payload, require_permission
 from api.lib.database import PSQLDatabase
+from api.lib.logger import log
 from api.models.auth import UserProfileUpdate
 from api.models.requests import UpdateUserPayload, UserProfilePatch
 from api.models.rows import (
@@ -20,6 +21,7 @@ from api.models.rows import (
     UserIdRow,
     UserListRow,
     UserProfilePictureRow,
+    UserReservationCountRow,
     UserTargetRow,
 )
 from api.services.file_operations import upload_profile_picture
@@ -257,6 +259,71 @@ class UsersImpl(BaseUsersApi):
             await db.commit()
 
         return MessageResponse(message="Utente aggiornato con successo")
+
+    async def delete_user(self, user_id: int) -> MessageResponse:
+        payload = await get_payload()
+        current_user_id = int(payload.sub)
+        extra = payload.model_extra or {}
+        current_role_id = int(extra.get("role_id", 0))
+
+        async with PSQLDatabase() as db:
+            position = await db.fetchone_as(
+                RolePositionRow,
+                "SELECT position FROM roles WHERE id = %s",
+                (current_role_id,),
+            )
+            if not position:
+                raise HTTPException(status_code=403, detail="Ruolo non trovato")
+            current_position = position.position
+
+            target = await db.fetchone_as(
+                UserTargetRow,
+                """
+                SELECT u.id, u.role_id, r.position AS role_position, r.name AS role_name
+                FROM utenti u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.id = %s
+                """,
+                (user_id,),
+            )
+            if not target:
+                raise HTTPException(status_code=404, detail="Utente non trovato")
+
+            if user_id == current_user_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Non puoi eliminare il tuo stesso account",
+                )
+
+            # Hierarchy check: lower position number = higher rank
+            if target.role_position <= current_position:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Non puoi eliminare utenti con ruolo uguale o superiore al tuo",
+                )
+
+            reservations = await db.fetchone_as(
+                UserReservationCountRow,
+                "SELECT COUNT(*) AS count FROM prenotazioni WHERE id = %s",
+                (user_id,),
+            )
+            if reservations and reservations.count > 0:
+                raise HTTPException(
+                    status_code=409,
+                    detail="L'utente ha prenotazioni attive e non può essere eliminato",
+                )
+
+            deleted = await db.fetchone_as(
+                UserIdRow,
+                "DELETE FROM utenti WHERE id = %s RETURNING id",
+                (user_id,),
+            )
+            if not deleted:
+                raise HTTPException(status_code=404, detail="Utente non trovato")
+            await db.commit()
+
+        log.info(f"Utente {user_id} eliminato con successo")
+        return MessageResponse(message="Utente eliminato con successo")
 
     @staticmethod
     def _to_update_payload(data: UpdateUserData) -> UpdateUserPayload:

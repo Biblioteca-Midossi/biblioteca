@@ -1,7 +1,7 @@
 import { SearchBar } from '@local/components/SearchBar'
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
-import type { BookListItem } from '@local/hooks/useBookStore'
 import { getResponsivePadding } from '@local/styles/bookGridStyles'
+import type { BookListItem } from '@local/types/book'
 import { Group, Pagination, SimpleGrid, Stack, Text } from '@mantine/core'
 import type { ReactNode } from 'react'
 
@@ -29,9 +29,10 @@ export function BookGrid({
       {Array.isArray(books) ? (
         <SimpleGrid
           cols={{
-            xs: 2,
+            base: 3,
             sm: 4,
-            lg: 6,
+            md: 6,
+            lg: 8,
             xl: 8,
           }}
           spacing="xs"

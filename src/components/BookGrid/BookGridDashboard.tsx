@@ -1,10 +1,10 @@
 import { BookCard } from '@local/components/BookGrid/BookCard'
 import type { EditBookFormValues } from '@local/components/BookGrid/BookEditDialog'
-import { openBookEditModal } from '@local/components/BookGrid/BookEditDialog'
 import { BookGrid } from '@local/components/BookGrid/BookGrid'
 import { BookOptionsMenu } from '@local/components/BookGrid/BookOptionsMenu'
+import { openBookEditModal } from '@local/components/BookModals'
 import { useBookGrid } from '@local/hooks/useBookGrid'
-import type { BookListItem } from '@local/hooks/useBookStore'
+import type { BookListItem } from '@local/types/book'
 import { Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { useNavigate } from '@tanstack/react-router'
@@ -14,17 +14,14 @@ export function BookGridDashboard() {
   const navigate = useNavigate()
   const {
     books,
-    filteredBooks,
     maxpage,
     page,
-    limit,
     anchorEl,
     selectedBook,
     setAnchorEl,
     setSelectedBook,
     handleSearch,
     handlePageChange,
-    fetchBooks,
     editBook,
     deleteBook,
   } = useBookGrid()
@@ -62,20 +59,21 @@ export function BookGridDashboard() {
         scaffale: values.scaffale || undefined,
       }
       if (!selectedBook?.id) return
-      const success = await editBook(selectedBook.id, bookData, values.copertina ?? undefined)
-      if (success) {
-        await fetchBooks(page, limit, '')
-        modals.closeAll()
-      }
+      await editBook({
+        bookId: selectedBook.id,
+        book: bookData,
+        file: values.copertina ?? undefined,
+      })
+      modals.closeAll()
     } catch {
-      /* handled by the store notification */
+      /* handled by the mutation notification */
     }
   }
 
   return (
     <>
       <BookGrid
-        books={Array.isArray(books) ? filteredBooks : books}
+        books={books}
         maxpage={maxpage}
         page={page}
         onPageChange={handlePageChange}
@@ -108,7 +106,6 @@ export function BookGridDashboard() {
               handleMenuClose()
               if (selectedBook?.id) {
                 await deleteBook(selectedBook.id)
-                void fetchBooks(page, limit, '')
               }
             },
           })

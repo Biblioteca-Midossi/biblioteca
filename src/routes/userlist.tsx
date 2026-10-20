@@ -1,9 +1,10 @@
 import type { UpdateUserData, UserListItem } from '@local/api'
 import { ProtectedPage } from '@local/components/ProtectedPage'
-import { updateUser, useUserlist } from '@local/hooks/useUserlist'
-import { Box, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { useDeleteUser, useUpdateUser, useUsers } from '@local/hooks/users'
+import { ActionIcon, Box, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { modals } from '@mantine/modals'
+import { IconEdit, IconTrash } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
 import { DataTable } from 'mantine-datatable'
 import { useEffect, useState } from 'react'
@@ -43,6 +44,7 @@ interface EditUserFormProps {
 
 function EditUserForm({ user, onSaved }: EditUserFormProps) {
   const roleOptions = useRoles()
+  const updateUserMutation = useUpdateUser()
 
   const form = useForm({
     initialValues: {
@@ -60,11 +62,9 @@ function EditUserForm({ user, onSaved }: EditUserFormProps) {
       email: form.values.email,
       ruolo: Number(form.values.ruolo),
     }
-    const result = await updateUser(user.id, updatedUser)
-    if (result.success) {
-      modals.closeAll()
-      onSaved()
-    }
+    await updateUserMutation.mutateAsync({ userId: user.id, userData: updatedUser })
+    modals.closeAll()
+    onSaved()
   }
 
   return (
@@ -94,7 +94,10 @@ function UserList() {
   const [page, setPage] = useState<number>(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
 
-  const { users, loading, totalUsers, refetch } = useUserlist(page - 1, rowsPerPage)
+  const usersQuery = useUsers((page - 1) * rowsPerPage, rowsPerPage)
+  const deleteUserMutation = useDeleteUser()
+  const users = usersQuery.data?.users ?? []
+  const totalUsers = usersQuery.data?.total ?? 0
 
   function handleEdit(user: UserListItem) {
     modals.open({
@@ -104,7 +107,25 @@ function UserList() {
         </Text>
       ),
       centered: true,
-      children: <EditUserForm user={user} onSaved={refetch} />,
+      children: <EditUserForm user={user} onSaved={() => void usersQuery.refetch()} />,
+    })
+  }
+
+  function handleDelete(user: UserListItem) {
+    modals.openConfirmModal({
+      title: 'Conferma eliminazione',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Sei sicuro di voler eliminare l&apos;utente &quot;{user.username}&quot;? Questa azione non
+          può essere annullata.
+        </Text>
+      ),
+      labels: { confirm: 'Elimina', cancel: 'Annulla' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => {
+        void deleteUserMutation.mutateAsync(user.id)
+      },
     })
   }
 
@@ -124,11 +145,16 @@ function UserList() {
     },
     {
       accessor: 'actions',
-      title: 'Actions',
+      title: '',
       render: (user: UserListItem) => (
-        <Button variant="outline" size="xs" onClick={() => handleEdit(user)}>
-          Edit
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <ActionIcon variant="subtle" onClick={() => handleEdit(user)}>
+            <IconEdit size={16} />
+          </ActionIcon>
+          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(user)}>
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Group>
       ),
     },
   ]
@@ -141,7 +167,7 @@ function UserList() {
         shadow="sm"
         columns={columns}
         records={users}
-        fetching={loading}
+        fetching={usersQuery.isPending}
         page={page}
         onPageChange={setPage}
         totalRecords={totalUsers}

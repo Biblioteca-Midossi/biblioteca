@@ -17,6 +17,13 @@ For version control practices, see the `COMMIT.md` file.
 - Use `@mantine/form` (`useForm`) for ALL form state. No `useState` for individual form fields.
 - Keep `useEffect` to absolute minimum — only for syncing external data into the form.
 
+## Server data (TanStack Query)
+
+- Use `@tanstack/react-query` for ALL server state. No `useState`/`useEffect` fetch patterns, no manual loading/error flags.
+- Reads: `useQuery` with keys from `@local/hooks/queryKeys` factories (never inline key arrays).
+- Writes: `useMutation` + `invalidateQueries` on the domain's `all` key — never hand-splice arrays or manually refetch after a mutation.
+- Shared client instances live in `@local/hooks/api` (`authApi`, `booksApi`, `usersApi`); the global axios interceptor handles silent 401 refresh for them.
+
 ## Components
 
 - Keep files focused and small. Split into subdirectories per feature if needed.

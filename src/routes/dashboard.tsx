@@ -1,10 +1,10 @@
-import type { RecentBookResponse, UserListItem } from '@local/api'
 import { BookGridDashboard } from '@local/components/BookGrid/BookGridDashboard'
-import { openBookAddModal } from '@local/components/BookInputForm'
+import { openBookAddModal } from '@local/components/BookModals'
 import { ProtectedPage } from '@local/components/ProtectedPage'
 import { StatCard } from '@local/components/StatCard'
 import { UserCard } from '@local/components/UserCard'
-import { booksApi, usersApi } from '@local/hooks/api'
+import { useRecentBooks } from '@local/hooks/books'
+import { useRecentUsers } from '@local/hooks/users'
 import {
   Alert,
   Box,
@@ -18,10 +18,8 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
 import { IconPlus } from '@tabler/icons-react'
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/dashboard')({
   component: () => (
@@ -32,39 +30,13 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function Dashboard() {
-  const [recentBooks, setRecentBooks] = useState<Array<RecentBookResponse>>([])
-  const [newUsers, setNewUsers] = useState<Array<UserListItem>>([])
-  const [stats] = useState({ total_books: 0, total_users: 0 })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const recentBooksQuery = useRecentBooks(5)
+  const recentUsersQuery = useRecentUsers(5)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const [booksRes, usersRes] = await Promise.all([
-          booksApi.getRecentBooks(5),
-          usersApi.getRecentUsers(5),
-        ])
-
-        setRecentBooks(booksRes.data?.books || [])
-        setNewUsers(usersRes.data?.users || [])
-      } catch (err) {
-        const message = err instanceof Error ? err.message : undefined
-        notifications.show({
-          title: 'Errore',
-          message: message ?? 'Impossibile caricare i dati della dashboard',
-          color: 'red',
-        })
-        setError(message ?? 'Failed to load dashboard data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void fetchData()
-  }, [])
+  const recentBooks = recentBooksQuery.data ?? []
+  const newUsers = recentUsersQuery.data ?? []
+  const loading = recentBooksQuery.isPending || recentUsersQuery.isPending
+  const stats = { total_books: 0, total_users: 0 }
 
   return (
     <Box className="flex flex-col items-center w-full py-4">
@@ -78,13 +50,13 @@ function Dashboard() {
           </Text>
         </Box>
 
-        {error && (
+        {(recentBooksQuery.isError || recentUsersQuery.isError) && (
           <Alert color="red" mb="md">
-            {error}
+            Impossibile caricare i dati della dashboard
           </Alert>
         )}
 
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md" mb="xl">
+        <SimpleGrid cols={{ base: 2, sm: 2, md: 4 }} spacing="md" mb="xl">
           <StatCard loading={loading} title="Total Books" value={stats.total_books} />
           <StatCard loading={loading} title="Total Users" value={stats.total_users} />
           <StatCard loading={loading} title="Recent Books" value={recentBooks.length} />
@@ -100,7 +72,7 @@ function Dashboard() {
               New Book
             </Button>
           </Group>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 3, sm: 3, md: 6, lg: 8 }} spacing="md">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}>
@@ -116,7 +88,12 @@ function Dashboard() {
                 <Card key={book.id} className="h-full flex flex-col">
                   {book.coverUrl && (
                     <Card.Section>
-                      <Image src={book.coverUrl} alt={book.titolo} height={200} />
+                      <Image
+                        className="aspect-1/1.5 cursor-pointer"
+                        src={book.coverUrl}
+                        alt={book.titolo}
+                        height={200}
+                      />
                     </Card.Section>
                   )}
                   <Box mt="sm" className="grow">
@@ -141,7 +118,7 @@ function Dashboard() {
           <Title order={4} mb="sm" fw={600}>
             New Users
           </Title>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
+          <SimpleGrid cols={{ base: 2, sm: 2, md: 3, lg: 4 }} spacing="md">
             {loading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}>

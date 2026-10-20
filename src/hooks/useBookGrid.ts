@@ -1,12 +1,9 @@
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
-import type { BookListItem } from '@local/hooks/useBookStore'
-import useBookStore from '@local/hooks/useBookStore'
+import { useBooks, useDeleteBook, useEditBook } from '@local/hooks/books'
+import type { BookListItem } from '@local/types/book'
 import { useEffect, useMemo, useState } from 'react'
 
 export const useBookGrid = () => {
-  const { books, singleBook, maxpage, fetchBooks, fetchSingleBook, editBook, deleteBook } =
-    useBookStore()
-
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const [selectedBook, setSelectedBook] = useState<Partial<BookListItem> | null>(null)
 
@@ -21,14 +18,14 @@ export const useBookGrid = () => {
         ? 6
         : currentBreakpoint === 'md'
           ? 4
-          : currentBreakpoint === 'sm'
-            ? 4
-            : 2
+          : 2
 
-  const filteredBooks = useMemo(() => {
-    if (!Array.isArray(books)) return []
-    return books.sort((a, b) => a.id - b.id)
-  }, [books])
+  const booksQuery = useBooks(page, limit, searchQuery || null)
+  const editBook = useEditBook()
+  const deleteBook = useDeleteBook()
+
+  const books = useMemo(() => booksQuery.data?.books ?? [], [booksQuery.data])
+  const maxpage = booksQuery.data?.maxpage ?? 1
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
@@ -40,26 +37,23 @@ export const useBookGrid = () => {
   }
 
   useEffect(() => {
-    void fetchBooks(page, limit, searchQuery)
-  }, [page, limit, searchQuery, fetchBooks])
+    setSelectedBook(null)
+  }, [page, limit, searchQuery])
 
   return {
     books,
-    singleBook,
-    filteredBooks,
     maxpage,
     page,
     limit,
     anchorEl,
     selectedBook,
     currentBreakpoint,
+    isLoading: booksQuery.isPending,
     setAnchorEl,
     setSelectedBook,
     handleSearch,
     handlePageChange,
-    fetchBooks,
-    fetchSingleBook,
-    editBook,
-    deleteBook,
+    editBook: editBook.mutateAsync,
+    deleteBook: deleteBook.mutateAsync,
   }
 }

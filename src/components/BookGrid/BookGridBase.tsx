@@ -1,11 +1,11 @@
 import { BookCard } from '@local/components/BookGrid/BookCard'
 import { BookGrid } from '@local/components/BookGrid/BookGrid'
 import { getBreakpoints } from '@local/components/Utils/getBreakpoints'
-import type { BookListItem } from '@local/hooks/useBookStore'
-import useBookStore from '@local/hooks/useBookStore'
+import { useBooks } from '@local/hooks/books'
 import { getResponsiveCols } from '@local/styles/bookGridStyles'
+import type { BookListItem } from '@local/types/book'
 import { Divider } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export function BookGridBase() {
   const currentBreakpoint = getBreakpoints()
@@ -15,23 +15,23 @@ export function BookGridBase() {
 
   const limit = getResponsiveCols(currentBreakpoint)
 
-  const { books, maxpage, fetchBooks } = useBookStore()
+  const booksQuery = useBooks(page, limit, searchQuery || null)
 
-  useEffect(() => {
-    void fetchBooks(page, limit, searchQuery)
-  }, [page, limit, searchQuery, fetchBooks])
+  const books = useMemo(
+    () => [...(booksQuery.data?.books ?? [])].sort((a, b) => a.id - b.id),
+    [booksQuery.data]
+  )
+  const maxpage = booksQuery.data?.maxpage ?? 1
 
   function handleSearch(query: string) {
     setSearchQuery(query)
     setPage(1)
   }
 
-  const filteredBooks = Array.isArray(books) ? [...books].sort((a, b) => a.id - b.id) : books
-
   return (
     <>
       <BookGrid
-        books={filteredBooks}
+        books={books}
         maxpage={maxpage}
         page={page}
         onPageChange={setPage}

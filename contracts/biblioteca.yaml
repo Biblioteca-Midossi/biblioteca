@@ -360,6 +360,32 @@ paths:
                 $ref: '#/components/schemas/UsersRecentListResponse'
         '404':
           description: Not found
+  /users/{user_id}:
+    delete:
+      tags:
+      - users
+      summary: Delete User
+      operationId: deleteUser
+      security:
+      - AuthXAccessCookie: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Not found
+        '409':
+          description: User still has reservations (prenotazioni) and cannot be deleted
   /users/update-user/{user_id}:
     put:
       tags:

@@ -7,7 +7,6 @@ export function DarkModeSwitch() {
 
   return (
     <Switch
-      color="midossi"
       onLabel={<IconSunFilled size={16}></IconSunFilled>}
       offLabel={<IconMoonFilled size={16}></IconMoonFilled>}
       checked={computedColorScheme === 'dark'}
