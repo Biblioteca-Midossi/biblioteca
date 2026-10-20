@@ -111,7 +111,7 @@ class BooksImpl(BaseBooksApi):
         data: Annotated[str, Field(description="JSON string matching CreateBookPayload")],
         thumbnail: UploadFile | None,
     ) -> MessageResponse:
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "create_book")
         try:
             book_payload = CreateBookPayload.model_validate(json.loads(data))
@@ -232,7 +232,7 @@ class BooksImpl(BaseBooksApi):
         updated_book: str | None,
         file: UploadFile | None,
     ) -> MessageResponse:
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "edit_book")
         try:
             if not updated_book:
@@ -299,7 +299,7 @@ class BooksImpl(BaseBooksApi):
             raise HTTPException(status_code=500, detail="Errore interno del server") from e
 
     async def delete_book(self, book_id: int) -> MessageResponse:
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "delete_book")
         try:
             with PSQLDatabase() as db:

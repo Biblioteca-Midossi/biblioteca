@@ -37,7 +37,7 @@ def _user_list_item(user: UserListRow) -> UserListItem:
 
 class UsersImpl(BaseUsersApi):
     async def get_profile(self) -> UserProfileOut:
-        payload = get_payload()
+        payload = await get_payload()
         profile = await get_user_profile(int(payload.sub))
         if not profile:
             raise HTTPException(status_code=404, detail="Utente non trovato")
@@ -64,7 +64,7 @@ class UsersImpl(BaseUsersApi):
         profile_update: UserProfileUpdate | None,
         file: UploadFile | None,
     ) -> MessageResponse:
-        payload = get_payload()
+        payload = await get_payload()
         user_id = int(payload.sub)
         update_data: dict[str, object] = {}
 
@@ -108,7 +108,7 @@ class UsersImpl(BaseUsersApi):
         return MessageResponse(message="Profilo aggiornato con successo")
 
     async def get_users(self, offset: int | None, limit: int | None) -> UsersListResponse:
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "view_users")
         offset = offset or 0
         limit = limit or 10
@@ -139,7 +139,7 @@ class UsersImpl(BaseUsersApi):
         return UsersListResponse(users=users, total=total_users)
 
     async def get_recent_users(self, limit: int | None) -> UsersRecentListResponse:
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "view_users")
         limit = limit or 5
 
@@ -169,7 +169,7 @@ class UsersImpl(BaseUsersApi):
         user_id: int,
         update_user_request: UpdateUserRequest,
     ) -> MessageResponse:
-        payload = get_payload()
+        payload = await get_payload()
         current_user_id = int(payload.sub)
         extra = payload.model_extra or {}
         current_role_id = int(extra.get("role_id", 0))

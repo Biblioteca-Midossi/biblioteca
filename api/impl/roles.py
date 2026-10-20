@@ -10,7 +10,7 @@ from api.lib.database import PSQLDatabase
 class RolesImpl(BaseRolesApi):
     async def list_roles(self) -> list[RoleOut]:
         """List all roles with their permissions. Requires view_users permission."""
-        payload = get_payload()
+        payload = await get_payload()
         require_permission(payload, "view_users")
         with PSQLDatabase() as db:
             cursor = db.get_cursor()
